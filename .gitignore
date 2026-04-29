@@ -1,0 +1,49 @@
+# WordPress core - never commit, WPEngine provides it
+/wp-admin/
+/wp-includes/
+/wp-*.php
+/index.php
+/license.txt
+/readme.html
+/xmlrpc.php
+
+# Config & secrets
+wp-config.php
+wp-config-local.php
+.env
+.env.*
+!.env.example
+
+# Uploads, cache, backups
+/wp-content/uploads/
+/wp-content/cache/
+/wp-content/upgrade/
+/wp-content/backup*/
+/wp-content/wflogs/
+/wp-content/advanced-cache.php
+/wp-content/object-cache.php
+/wp-content/db.php
+
+# Third-party plugins (managed by WPEngine or Composer)
+/wp-content/plugins/*
+!/wp-content/plugins/locals-*/
+!/wp-content/plugins/.gitkeep
+
+# Third-party themes
+/wp-content/themes/*
+!/wp-content/themes/locals-realty/
+!/wp-content/themes/.gitkeep
+
+# Build artifacts
+node_modules/
+vendor/
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.sublime-*
+
+# Local by Flywheel
+/app/
+/conf/
+/logs/
