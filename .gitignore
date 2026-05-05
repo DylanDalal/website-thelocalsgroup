@@ -43,6 +43,12 @@ vendor/
 .vscode/
 *.sublime-*
 
+# Backups & archives
+*.zip
+*.tar.gz
+*.sql
+*.sql.gz
+
 # Local by Flywheel
 /app/
 /conf/
