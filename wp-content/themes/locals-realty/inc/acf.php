@@ -21,6 +21,7 @@ add_action('acf/init', function () {
         'title'    => 'State Page',
         'location' => [[['param' => 'post_type', 'operator' => '==', 'value' => 'state']]],
         'fields'   => [
+            ['key' => 'field_state_abbr',          'name' => 'abbreviation',      'label' => 'State abbreviation (2-letter, e.g. FL)', 'type' => 'text', 'maxlength' => 2],
             ['key' => 'field_state_hero',          'name' => 'hero_image',        'label' => 'Hero image',        'type' => 'image', 'return_format' => 'array'],
             ['key' => 'field_state_idx_default',   'name' => 'idx_default_query', 'label' => 'IDX default query', 'type' => 'text'],
             ['key' => 'field_state_lifestyle_hero','name' => 'lifestyle_hero',    'label' => 'Lifestyle hero',    'type' => 'image', 'return_format' => 'array'],

@@ -10,13 +10,16 @@
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
 
-<header class="site-header" data-site-header>
+<?php
+$has_hero = is_front_page() || (is_singular('state'));
+?>
+<header class="site-header <?php echo $has_hero ? '' : 'site-header--solid'; ?>" data-site-header>
     <div class="site-header__inner">
         <a class="site-header__brand" href="<?php echo esc_url(home_url('/')); ?>" rel="home">
             <?php if (has_custom_logo()) {
                 the_custom_logo();
             } else { ?>
-                <span class="site-header__wordmark"><?php bloginfo('name'); ?></span>
+                <span class="site-header__wordmark" aria-label="<?php bloginfo('name'); ?>">lpt</span>
             <?php } ?>
         </a>
         <nav class="site-header__nav" aria-label="<?php esc_attr_e('Primary', 'locals-realty'); ?>">
