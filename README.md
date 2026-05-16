@@ -1,6 +1,18 @@
 # The Locals Group — WordPress site
 
-Custom WordPress theme for The Locals Realty Group, with Lofty IDX integration. Local development runs in Local by Flywheel; production deploys to WPEngine via git push.
+Custom WordPress theme for The Locals Realty Group, with Lofty IDX integration. Local development runs in Local by Flywheel; production deploys to WP Engine automatically via GitHub Actions on every push to `main`.
+
+## TL;DR — daily workflow
+
+1. **Edit** the theme/plugin in Local by Flywheel (`localwp.com`) — your Local site is symlinked to this repo, so changes show up instantly at `https://thelocalsgroup.local`.
+2. **Commit and push to `main`** on GitHub.
+3. **GitHub Actions deploys** the changed files to WP Engine over SSH (rsync). Live in ~1–2 min. Watch progress under the repo's **Actions** tab.
+
+That covers **code** (PHP, CSS, JS, theme, our `locals-*` plugins). It does **not** sync the database (pages, posts, ACF values, menus, settings) or `wp-content/uploads/`. For those, see [Code vs. content](#code-vs-content-important) below.
+
+## What is Lofty?
+
+[Lofty](https://www.lofty.com/) (formerly Chime) is the IDX/CRM platform that powers our property search and lead capture. It does **not** ship a WordPress plugin — instead we embed Lofty's hosted search at `search.thelocalsgroup.com` via iframe (Phase 1) and drop in their JS lead-capture widgets where needed. See [Lofty IDX integration](#lofty-idx-integration) for the three integration tiers and how to configure each.
 
 ## Repo layout
 
@@ -89,31 +101,34 @@ Recommended workflow:
 
 | Layer | Source of truth | Sync method |
 |---|---|---|
-| Theme / plugin code | This git repo | `git push production main` |
+| Theme / plugin code | This git repo | Push to `main` → GitHub Actions deploys |
 | Page content, CPTs, ACF values | Whichever environment is currently being authored on | WP Migrate (Local → staging → production) |
 | Media (`uploads/`) | Same as content | WP Migrate, or rsync via SSH gateway |
 
 Once production is the live site, content authoring shifts to production. Devs pull a fresh DB *down* to Local before doing template work that interacts with real content.
 
-## WPEngine deploy
+## WP Engine deploy (GitHub Actions)
 
-WPEngine offers two git-deploy methods. We will use the **Git Push** method (simpler, no GitHub Action required):
+Deployment is automated by `.github/workflows/deploy.yml`. On every push to `main` (or manual dispatch from the **Actions** tab), GitHub:
 
-1. In the WPEngine User Portal, open the install (e.g. `thelocalsgroup`) and add your SSH public key under **SSH Gateway / Git Push**.
-2. Add the WPEngine remote in this repo:
-   ```bash
-   git remote add production git@git.wpengine.com:production/thelocalsgroup.git
-   git remote add staging    git@git.wpengine.com:staging/thelocalsgroup.git
-   ```
-3. Push:
-   ```bash
-   git push production main
-   git push staging main
-   ```
-   WPEngine receives the push at the `wp-content/` level — our repo layout matches that, so theme and plugin paths land in the right place.
-4. After first deploy, activate the theme in WPEngine's WP Admin and install the same plugin set as Local.
+1. Checks out the repo.
+2. Uses [`wpengine/github-action-wpe-site-deploy`](https://github.com/wpengine/github-action-wpe-site-deploy) to rsync over SSH:
+   - `wp-content/themes/locals-realty/` → WPE install `thelocalsgroup`, same path.
+   - `wp-content/plugins/locals-*/` → same. (Only our first-party plugins; other plugins on the server are left untouched.)
+3. rsync runs with `--delete` — files removed locally are removed on WPE.
 
-> **Heads up**: WPEngine's git deploy is **add/update only by default**. Files removed from the repo are not removed on the server unless you explicitly enable file deletion in the install's Git settings.
+### One-time setup
+
+1. **WP Engine** → User Portal → install `thelocalsgroup` → **SSH Keys** → add a deploy key. WPE provides the `WPE_SSHG_KEY_PRIVATE` to use as the GitHub secret.
+2. **GitHub** → repo → Settings → Secrets and variables → Actions → add secret `WPE_SSHG_KEY_PRIVATE` with the private key contents.
+3. Push to `main`. The Actions tab will show the deploy job. First run, activate **Locals Realty** in WPE's WP Admin → Appearance → Themes, and install the same plugin set as Local.
+
+### Deploy gotchas
+
+- **`--delete` is on.** Deleting a theme file locally and pushing will delete it on production. Lofty/ACF field-group PHP exports living inside the theme are easy to lose this way — keep them committed.
+- **Only `wp-content/themes/locals-realty/` and `wp-content/plugins/locals-*/` ship.** Anything outside those paths (other themes, third-party plugins, `wp-config.php`, mu-plugins) is managed in WPE's WP Admin and is not touched by deploys.
+- **No DB or uploads sync.** Use WP Migrate (see below) for content.
+- **Manual re-deploy:** repo → Actions → "Deploy to WP Engine" → **Run workflow**.
 
 ## Conventions
 
@@ -130,7 +145,8 @@ WPEngine offers two git-deploy methods. We will use the **Git Push** method (sim
 - [x] Lofty iframe + `[lofty_search]` shortcode
 - [ ] Brand tokens applied (colors, type) from final design
 - [ ] Lofty subdomain provisioned & `LOFTY_IDX_BASE_URL` set
-- [ ] WPEngine install created, SSH key added, first deploy
+- [x] WP Engine install created, SSH key added, GitHub Actions deploy workflow live
+- [ ] First successful deploy verified on production
 - [ ] About + Recruitment final copy
 - [ ] Lead capture wiring (Lofty CRM endpoint or HubSpot/etc.)
 - [ ] WP Migrate installed on both Local and WPEngine for DB sync

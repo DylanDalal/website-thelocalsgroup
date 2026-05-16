@@ -83,3 +83,42 @@ function locals_thumbnail_url($post, $fallback = '', $size = 'locals-card') {
     }
     return '';
 }
+
+/**
+ * Per-state default copy used by single-state.php when the corresponding ACF
+ * field is empty. Keyed by state slug (post slug of the state CPT).
+ */
+function locals_state_defaults($slug) {
+    $map = [
+        'florida' => [
+            'lifestyle_tagline'       => 'Sun, salt air, and a slower clock — Florida living, on your terms.',
+            'lifestyle_feature_title' => 'Coastal Living',
+            'lifestyle_feature_body'  => 'From the quiet inlets of Jupiter to the energy of Miami, Florida rewards a life lived outdoors. Our local agents help you find the right stretch of coast — the boating town, the gated community, the walkable beach village — and the home that fits how you actually plan to spend your weekends.',
+            'help_copy'               => 'Whether you\'re relocating from the Northeast, trading up to a waterfront, or buying a second home in the sun, our Florida team knows the inventory, the HOAs, and the insurance landscape. We\'ll guide you through it.',
+        ],
+        'north-carolina' => [
+            'lifestyle_tagline'       => 'Mountains, music, and Main Streets — North Carolina at its most welcoming.',
+            'lifestyle_feature_title' => 'Mountain Towns',
+            'lifestyle_feature_body'  => 'Asheville\'s arts scene, the Blue Ridge Parkway out your back door, four real seasons, and small towns where the brewery and the bookshop know your name. North Carolina rewards people who want a community to belong to — not just an address.',
+            'help_copy'               => 'Our North Carolina agents live in the towns they sell — from Asheville and Black Mountain to the lake communities near Hickory. We\'ll help you weigh elevation, drive times, and the rhythm of each neighborhood before you commit.',
+        ],
+        'south-carolina' => [
+            'lifestyle_tagline'       => 'Lowcountry charm, historic streets, and tides that set the pace.',
+            'lifestyle_feature_title' => 'Lowcountry Living',
+            'lifestyle_feature_body'  => 'Charleston\'s historic peninsula, the marshes of Mount Pleasant, the barrier islands and the inland golf communities — South Carolina is a state where front porches still mean something. We help buyers translate that charm into the right zip code for their life.',
+            'help_copy'               => 'From historic district renovations to new construction on Daniel Island, our South Carolina team understands the quirks — flood zones, BAR review, dock permits — that the listing photo doesn\'t show. We\'ll get you to the right yes.',
+        ],
+        'tennessee' => [
+            'lifestyle_tagline'       => 'Music City energy, Smoky Mountain quiet, and everything in between.',
+            'lifestyle_feature_title' => 'Nashville & Beyond',
+            'lifestyle_feature_body'  => 'Nashville\'s neighborhoods each have their own song — East Nashville\'s creative pulse, Germantown\'s walkability, Franklin\'s small-town feel a short drive south. Head east and the pace shifts again toward Knoxville, Chattanooga, and the Smokies. We help you find the part of Tennessee that actually sounds like you.',
+            'help_copy'               => 'Tennessee\'s growth is real, and the market moves fast. Our local agents have the relationships and the off-market intel to help you compete — and the patience to make sure the home you land is the one you actually wanted.',
+        ],
+    ];
+    return $map[$slug] ?? [
+        'lifestyle_tagline'       => 'We want to help you reach your new lifestyle.',
+        'lifestyle_feature_title' => 'Small Towns',
+        'lifestyle_feature_body'  => 'Our mission is simple: combine world-class real estate expertise with innovative marketing that elevates every listing, humanizes every transaction, and builds long-term relationships within the communities we proudly serve.',
+        'help_copy'               => 'Our local agents know this region the way you only can by living in it. Tell us what you\'re looking for and we\'ll help you find it.',
+    ];
+}

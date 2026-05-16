@@ -20,18 +20,21 @@ add_action('wp_enqueue_scripts', function () {
         null
     );
 
+    $css_path = get_template_directory() . '/assets/css/main.css';
+    $js_path  = get_template_directory() . '/assets/js/main.js';
+
     wp_enqueue_style(
         'locals-realty',
         LOCALS_REALTY_URI . '/assets/css/main.css',
         ['locals-realty-fonts'],
-        LOCALS_REALTY_VERSION
+        file_exists($css_path) ? filemtime($css_path) : LOCALS_REALTY_VERSION
     );
 
     wp_enqueue_script(
         'locals-realty',
         LOCALS_REALTY_URI . '/assets/js/main.js',
         [],
-        LOCALS_REALTY_VERSION,
+        file_exists($js_path) ? filemtime($js_path) : LOCALS_REALTY_VERSION,
         true
     );
 });

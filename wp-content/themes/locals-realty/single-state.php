@@ -32,12 +32,19 @@ while (have_posts()) : the_post();
         ]);
         $_COOKIE['locals_pref_state'] = $state_abbr;
     }
-    $hero_url   = locals_image_url($hero, "default-state-{$state_slug}.jpg", 'locals-hero')
-               ?: locals_image_url(null, 'default-state-hero.jpg', 'locals-hero');
+    // Match the landing-page state card image so the View Transition morph
+    // shares a single source asset (state-card-{slug}.jpg) on both ends.
+    $hero_url   = locals_thumbnail_url(get_the_ID(), "state-card-{$state_slug}.jpg", 'locals-hero')
+               ?: locals_thumbnail_url(0, 'state-card-default.jpg', 'locals-hero');
 
     $life_hero  = get_field('lifestyle_hero');
     $life_url   = locals_image_url($life_hero, 'default-lifestyle-hero.jpg', 'locals-hero');
-    $life_tag   = get_field('lifestyle_tagline') ?: __('We want to help you reach your new lifestyle.', 'locals-realty');
+
+    $defaults        = locals_state_defaults($state_slug);
+    $life_tag        = get_field('lifestyle_tagline')       ?: $defaults['lifestyle_tagline'];
+    $feature_title   = get_field('lifestyle_feature_title') ?: $defaults['lifestyle_feature_title'];
+    $feature_body    = get_field('lifestyle_feature_body')  ?: $defaults['lifestyle_feature_body'];
+    $help_copy       = get_field('help_copy')               ?: $defaults['help_copy'];
 
     $towns      = get_posts([
         'post_type'      => 'town',
@@ -54,19 +61,26 @@ while (have_posts()) : the_post();
 
 <section class="hero hero--state">
     <div class="hero__media">
-        <?php if ($hero_url) : ?><img class="hero__img" src="<?php echo esc_url($hero_url); ?>" alt=""><?php endif; ?>
+        <?php if ($hero_url) : ?>
+            <img class="hero__img"
+                 src="<?php echo esc_url($hero_url); ?>"
+                 alt=""
+                 style="view-transition-name: state-photo-<?php echo esc_attr($state_slug); ?>;">
+        <?php endif; ?>
     </div>
     <div class="hero__content">
-        <h1 class="hero__title hero__title--state"><?php the_title(); ?></h1>
+        <h1 class="hero__title hero__title--state"
+            style="view-transition-name: state-label-<?php echo esc_attr($state_slug); ?>;"><?php the_title(); ?></h1>
         <form class="hero__search" action="<?php echo esc_url(home_url('/search')); ?>" method="get">
-            <input type="hidden" name="state" value="<?php echo esc_attr(get_the_title()); ?>">
+            <input type="hidden" name="state" value="<?php echo esc_attr($state_abbr); ?>">
             <input name="q" type="search" placeholder="Search by town, address, agent...">
             <button type="submit"><?php esc_html_e('Search', 'locals-realty'); ?></button>
         </form>
     </div>
 </section>
 
-<section class="favorites container">
+<?php if ($state_slug !== 'florida' && !empty($towns)) : ?>
+<section class="favorites container" data-reveal>
     <h2 class="section-title">Our favorites:</h2>
     <div class="favorites__layout">
         <ul class="favorites__list" data-favorites-list>
@@ -91,10 +105,76 @@ while (have_posts()) : the_post();
         </div>
     </div>
 </section>
+<?php endif; ?>
 
-<section class="hero hero--lifestyle">
+<?php
+if ($state_slug === 'florida') :
+    $fl_pill_candidates = [
+        ['label' => 'Jupiter',        'city' => 'Jupiter'],
+        ['label' => 'Naples',         'city' => 'Naples'],
+        ['label' => 'Miami',          'city' => 'Miami'],
+        ['label' => 'Tampa',          'city' => 'Tampa'],
+        ['label' => 'Sarasota',       'city' => 'Sarasota'],
+        ['label' => 'Palm Beach',     'city' => 'Palm Beach'],
+        ['label' => 'Bonita Springs', 'city' => 'Bonita Springs'],
+        ['label' => 'Boca Raton',     'city' => 'Boca Raton'],
+        ['label' => 'Orlando',        'city' => 'Orlando'],
+    ];
+    $fl_pills = array_values(array_filter($fl_pill_candidates, function ($p) {
+        $filter = ['city' => $p['city'], 'state' => 'FL', 'scope' => 'office', 'limit' => 9];
+        return !empty(locals_lofty_listings($filter));
+    }));
+    if ($fl_pills) : ?>
+<section class="highlights container" data-reveal>
+    <h2 class="section-title"><?php esc_html_e('Florida properties', 'locals-realty'); ?></h2>
+    <ul class="highlights__pills" data-listings-filters>
+        <?php foreach ($fl_pills as $i => $p) :
+            $filter = ['city' => $p['city'], 'state' => 'FL', 'scope' => 'office', 'limit' => 9];
+        ?>
+            <li>
+                <button type="button"
+                        class="highlights__pill <?php echo $i === 0 ? 'is-active' : ''; ?>"
+                        data-filter="<?php echo esc_attr(wp_json_encode($filter)); ?>">
+                    <?php echo esc_html($p['label']); ?>
+                </button>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+    <div class="highlights__carousel" data-carousel>
+        <button type="button" class="highlights__nav highlights__nav--prev" data-carousel-prev
+                aria-label="<?php esc_attr_e('Previous properties', 'locals-realty'); ?>" hidden>
+            <span aria-hidden="true">&larr;</span>
+        </button>
+        <div class="highlights__cards" data-listings-grid aria-live="polite" aria-busy="false">
+            <?php
+            $initial = ['city' => $fl_pills[0]['city'], 'state' => 'FL', 'scope' => 'office', 'limit' => 9];
+            locals_render_listings($initial, __('No active listings here right now.', 'locals-realty'));
+            ?>
+        </div>
+        <button type="button" class="highlights__nav highlights__nav--next" data-carousel-next
+                aria-label="<?php esc_attr_e('Next properties', 'locals-realty'); ?>" hidden>
+            <span aria-hidden="true">&rarr;</span>
+        </button>
+    </div>
+</section>
+<?php endif; endif; ?>
+
+<section class="hero hero--lifestyle<?php echo $state_slug === 'florida' ? ' hero--lifestyle-flipbook' : ''; ?>"
+         <?php echo $state_slug === 'florida' ? 'data-flipbook' : ''; ?>>
     <div class="hero__media">
-        <?php if ($life_url) : ?><img class="hero__img" src="<?php echo esc_url($life_url); ?>" alt=""><?php endif; ?>
+        <?php if ($state_slug === 'florida') :
+            $frame_base = get_template_directory_uri() . '/assets/images/';
+            for ($i = 1; $i <= 6; $i++) : ?>
+                <img class="hero-flipbook__frame"
+                     data-frame="<?php echo (int) ($i - 1); ?>"
+                     src="<?php echo esc_url($frame_base . 'florida' . $i . '.webp'); ?>"
+                     alt=""
+                     <?php echo $i === 1 ? 'fetchpriority="high"' : 'loading="lazy"'; ?>
+                     decoding="async">
+            <?php endfor;
+        elseif ($life_url) : ?>
+            <img class="hero__img" src="<?php echo esc_url($life_url); ?>" alt="">
+        <?php endif; ?>
     </div>
     <div class="hero__content">
         <h2 class="hero__title">Lifestyle realty.</h2>
@@ -102,7 +182,7 @@ while (have_posts()) : the_post();
     </div>
 </section>
 
-<section class="lifestyles container">
+<section class="lifestyles container" data-reveal>
     <ul class="lifestyles__pills" data-lifestyles>
         <?php
         if ($lifestyles && !is_wp_error($lifestyles)) {
@@ -143,21 +223,21 @@ while (have_posts()) : the_post();
             ?>
         </div>
         <div class="lifestyles__feature-body">
-            <h3>Small Towns</h3>
-            <p><?php echo esc_html($mission); ?></p>
-            <p style="margin-top:1rem"><a class="highlights__view-all" href="#">View small town properties &rarr;</a></p>
+            <h3><?php echo esc_html($feature_title); ?></h3>
+            <p><?php echo esc_html($feature_body); ?></p>
+            <p style="margin-top:1rem"><a class="highlights__view-all" href="<?php echo esc_url(home_url('/search?state=' . $state_abbr)); ?>"><?php printf(esc_html__('View %s properties', 'locals-realty'), esc_html(strtolower($feature_title))); ?> &rarr;</a></p>
         </div>
     </div>
 </section>
 
-<section class="container split split--reverse">
+<section class="container split split--reverse" data-reveal>
     <?php $help_img = locals_image_url(null, 'were-here-to-help.jpg'); ?>
     <div class="split__media">
         <?php if ($help_img) : ?><img src="<?php echo esc_url($help_img); ?>" alt=""><?php endif; ?>
     </div>
     <div class="split__body">
         <h2>We're here to help.</h2>
-        <p><?php echo esc_html($mission); ?></p>
+        <p><?php echo esc_html($help_copy); ?></p>
         <a class="btn btn--ghost" href="<?php echo esc_url(home_url('/contact')); ?>"><?php esc_html_e('Contact', 'locals-realty'); ?></a>
     </div>
 </section>

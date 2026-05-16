@@ -76,17 +76,21 @@ if ($highlight_towns) {
         <?php endif; ?>
     </div>
     <div class="hero__content">
-        <div class="hero__overlay-logo">
-            <span style="font-size:0.7rem;letter-spacing:0.1em">The</span>
-            <strong>locals <span style="font-size:0.55em;font-weight:400">Group</span></strong>
-            <strong style="margin-top:0.1em">lpt <span style="font-size:0.85em;font-weight:400">realty</span></strong>
-            <small>Brokerage for life&trade;</small>
-        </div>
-        <h1 class="hero__title">Learn from<br>a local.</h1>
+        <h1 class="hero__title" data-hero-title>Learn from<br>a local.</h1>
     </div>
+    <form class="hero__search hero__search--floating"
+          data-hero-search
+          action="<?php echo esc_url(home_url('/search')); ?>"
+          method="get"
+          role="search">
+        <label class="visually-hidden" for="hero-search-input"><?php esc_html_e('Search properties', 'locals-realty'); ?></label>
+        <input id="hero-search-input" name="q" type="search"
+               placeholder="<?php esc_attr_e('Search by address, town, agent...', 'locals-realty'); ?>">
+        <button type="submit" aria-label="<?php esc_attr_e('Search', 'locals-realty'); ?>">&rarr;</button>
+    </form>
 </section>
 
-<section class="mission container">
+<section class="mission container" data-reveal>
     <div class="mission__main">
         <h2 class="mission__title">The right home.<br>The right lifestyle.</h2>
         <p class="mission__copy"><?php echo esc_html($mission); ?></p>
@@ -130,7 +134,7 @@ if ($highlight_towns) {
     </aside>
 </section>
 
-<section class="landing-search container">
+<section class="landing-search container" data-reveal>
     <form class="landing-search__bar" action="<?php echo esc_url(home_url('/search')); ?>" method="get" role="search">
         <label class="visually-hidden" for="landing-search">Search properties</label>
         <input id="landing-search" name="q" type="search" placeholder="Search by address, location, agent...">
@@ -140,7 +144,7 @@ if ($highlight_towns) {
 
 <section class="states container">
     <h2 class="section-title">By state</h2>
-    <ul class="states__grid">
+    <ul class="states__grid" data-reveal data-reveal-stagger="0.09">
         <?php foreach ($states as $state) :
             $slug = sanitize_title(get_the_title($state));
             $img  = locals_thumbnail_url($state, "state-card-{$slug}.jpg", 'locals-town')
@@ -149,20 +153,33 @@ if ($highlight_towns) {
             <li class="states__item">
                 <a href="<?php echo esc_url(get_permalink($state)); ?>">
                     <?php if ($img) : ?>
-                        <img src="<?php echo esc_url($img); ?>" alt="<?php echo esc_attr(get_the_title($state)); ?>">
+                        <img src="<?php echo esc_url($img); ?>"
+                             alt="<?php echo esc_attr(get_the_title($state)); ?>"
+                             style="view-transition-name: state-photo-<?php echo esc_attr($slug); ?>;">
                     <?php endif; ?>
-                    <span class="states__label"><?php echo esc_html(get_the_title($state)); ?></span>
+                    <span class="states__label"
+                          style="view-transition-name: state-label-<?php echo esc_attr($slug); ?>;"><?php echo esc_html(get_the_title($state)); ?></span>
                 </a>
             </li>
         <?php endforeach; ?>
     </ul>
 </section>
 
-<section class="highlights container">
+<?php
+// Probe each pill's filter and drop ones that return no active listings.
+// locals_lofty_listings() caches each filter in a 15-min transient, and the
+// initial render below reuses the same filter shape so it's a cache hit.
+$pills = array_values(array_filter($pills, function ($p) {
+    $filter = ['city' => $p['city'], 'state' => $p['state'], 'scope' => 'office', 'limit' => 9];
+    return !empty(locals_lofty_listings($filter));
+}));
+?>
+<?php if ($pills) : ?>
+<section class="highlights container" data-reveal>
     <h2 class="section-title">Highlighted properties</h2>
     <ul class="highlights__pills" data-listings-filters>
         <?php foreach ($pills as $i => $p) :
-            $filter = ['city' => $p['city'], 'state' => $p['state'], 'scope' => 'office', 'limit' => 6];
+            $filter = ['city' => $p['city'], 'state' => $p['state'], 'scope' => 'office', 'limit' => 9];
         ?>
             <li>
                 <button type="button"
@@ -173,22 +190,60 @@ if ($highlight_towns) {
             </li>
         <?php endforeach; ?>
     </ul>
-    <div class="highlights__cards" data-listings-grid aria-live="polite" aria-busy="false">
-        <?php
-        // Initial render uses the first pill's filter so the page loads with content.
-        $initial = ['city' => $pills[0]['city'], 'state' => $pills[0]['state'], 'scope' => 'office', 'limit' => 6];
-        locals_render_listings(
-            $initial,
-            __('Featured listings will populate here once Lofty returns matching active listings.', 'locals-realty')
-        );
-        ?>
+    <div class="highlights__carousel" data-carousel>
+        <button type="button" class="highlights__nav highlights__nav--prev" data-carousel-prev
+                aria-label="<?php esc_attr_e('Previous properties', 'locals-realty'); ?>" hidden>
+            <span aria-hidden="true">&larr;</span>
+        </button>
+        <div class="highlights__cards" data-listings-grid aria-live="polite" aria-busy="false">
+            <?php
+            $initial = ['city' => $pills[0]['city'], 'state' => $pills[0]['state'], 'scope' => 'office', 'limit' => 9];
+            locals_render_listings(
+                $initial,
+                __('Featured listings will populate here once Lofty returns matching active listings.', 'locals-realty')
+            );
+            ?>
+        </div>
+        <button type="button" class="highlights__nav highlights__nav--next" data-carousel-next
+                aria-label="<?php esc_attr_e('Next properties', 'locals-realty'); ?>" hidden>
+            <span aria-hidden="true">&rarr;</span>
+        </button>
     </div>
-    <a class="highlights__view-all" href="<?php echo esc_url(home_url('/search')); ?>">
-        <?php esc_html_e('View all properties', 'locals-realty'); ?> &rarr;
-    </a>
+    <div class="highlights__view-all-row">
+        <a class="highlights__view-all" href="<?php echo esc_url(home_url('/search')); ?>">
+            <?php esc_html_e('View all properties', 'locals-realty'); ?> &rarr;
+        </a>
+    </div>
+</section>
+<?php endif; ?>
+
+<?php
+$lifestyle_eyebrow = function_exists('get_field') ? get_field('lifestyle_eyebrow') : '';
+$lifestyle_title   = function_exists('get_field') ? get_field('lifestyle_title')   : '';
+$lifestyle_body    = function_exists('get_field') ? get_field('lifestyle_body')    : '';
+$lifestyle_image   = function_exists('get_field') ? get_field('lifestyle_image')   : null;
+$lifestyle_eyebrow = $lifestyle_eyebrow ?: __('Lifestyle realty.', 'locals-realty');
+$lifestyle_title   = $lifestyle_title   ?: __('Matching people to new lifestyles.', 'locals-realty');
+$lifestyle_body    = $lifestyle_body    ?: __('A move is more than a transaction — it\'s a chance to step into a different rhythm. We listen for what you\'re actually after (slower mornings, water access, a school, room to breathe) and pair you with the town, neighborhood, and home that fits the life you\'re reaching toward.', 'locals-realty');
+$lifestyle_img_url = locals_image_url($lifestyle_image, 'lifestyle.jpg', 'locals-card');
+?>
+<section class="container lifestyle-match" data-reveal>
+    <div class="lifestyle-match__body">
+        <p class="lifestyle-match__eyebrow"><?php echo esc_html($lifestyle_eyebrow); ?></p>
+        <h2 class="lifestyle-match__title"><?php echo esc_html($lifestyle_title); ?></h2>
+        <p class="lifestyle-match__copy"><?php echo esc_html($lifestyle_body); ?></p>
+        <a class="btn btn--ghost" href="<?php echo esc_url(home_url('/about')); ?>">
+            <?php esc_html_e('Start the conversation', 'locals-realty'); ?>
+        </a>
+    </div>
+    <?php if ($lifestyle_img_url) : ?>
+        <div class="lifestyle-match__media">
+            <img src="<?php echo esc_url($lifestyle_img_url); ?>" alt="" loading="lazy">
+        </div>
+    <?php endif; ?>
 </section>
 
-<section class="container split">
+<section class="container split" data-reveal>
     <?php
     $team_page = get_page_by_path('about');
     $team_url  = $team_page ? locals_thumbnail_url($team_page, 'team.jpg', 'locals-card') : locals_image_url(null, 'team.jpg');
@@ -203,7 +258,7 @@ if ($highlight_towns) {
     </div>
 </section>
 
-<section class="container split split--reverse">
+<section class="container split split--reverse" data-reveal>
     <div class="split__media">
         <?php $join_url = locals_image_url(null, 'join.jpg'); ?>
         <?php if ($join_url) : ?><img src="<?php echo esc_url($join_url); ?>" alt=""><?php endif; ?>

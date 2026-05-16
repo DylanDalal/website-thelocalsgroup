@@ -55,4 +55,18 @@ add_action('init', function () {
         'show_in_rest' => true,
         'rewrite'      => ['slug' => 'state-region'],
     ]);
+
+    register_post_type('recruit_lead', [
+        'label'         => __('Recruitment leads', 'locals-realty'),
+        'public'        => false,
+        'show_ui'       => true,
+        'show_in_menu'  => true,
+        'show_in_rest'  => false,
+        'menu_icon'     => 'dashicons-id',
+        'capabilities'  => [
+            'create_posts' => 'do_not_allow',
+        ],
+        'map_meta_cap'  => true,
+        'supports'      => ['title', 'editor'],
+    ]);
 });

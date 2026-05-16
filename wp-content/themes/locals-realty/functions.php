@@ -16,3 +16,4 @@ require_once LOCALS_REALTY_DIR . '/inc/enqueue.php';
 require_once LOCALS_REALTY_DIR . '/inc/post-types.php';
 require_once LOCALS_REALTY_DIR . '/inc/acf.php';
 require_once LOCALS_REALTY_DIR . '/inc/lofty-idx.php';
+require_once LOCALS_REALTY_DIR . '/inc/forms.php';
