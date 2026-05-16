@@ -413,6 +413,34 @@ add_action('rest_api_init', function () {
             if (empty($filters['scope']))  { $filters['scope'] = 'office'; }
             if (empty($filters['limit']))  { $filters['limit'] = 6; }
 
+            // Admin-only debug: ?debug=1 returns the raw Lofty request/response
+            // so we can inspect which filter fields the API actually honors.
+            if ($req->get_param('debug') && current_user_can('manage_options')) {
+                $request_body = locals_lofty_build_listings_request($filters);
+                $result       = locals_lofty_request_listings($filters);
+                $body         = $result['body'] ?? null;
+                $rows         = is_array($body) ? ($body['data'] ?? $body['result'] ?? $body) : [];
+                $cities       = [];
+                if (is_array($rows)) {
+                    foreach ($rows as $row) {
+                        if (is_array($row)) {
+                            $cities[] = $row['city'] ?? ($row['cityName'] ?? '?');
+                        }
+                    }
+                }
+                return [
+                    'filters'        => $filters,
+                    'lofty_request'  => $request_body,
+                    'lofty_status'   => $result['status'],
+                    'lofty_url'      => $result['url'],
+                    'lofty_error'    => $result['error'],
+                    'returned_count' => is_array($rows) ? count($rows) : 0,
+                    'returned_cities' => array_count_values(array_filter($cities)),
+                    'body_keys'      => is_array($body) ? array_keys($body) : null,
+                    'body_raw_sample' => substr((string) $result['body_raw'], 0, 1500),
+                ];
+            }
+
             ob_start();
             locals_render_listings($filters, __('No listings match this filter right now.', 'locals-realty'));
             return [
