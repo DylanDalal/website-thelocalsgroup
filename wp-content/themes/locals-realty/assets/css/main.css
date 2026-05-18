@@ -292,6 +292,8 @@ html.nav-open, html.nav-open body { overflow: hidden; }
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
+  transform: scale(var(--hero-media-scale, 1.06));
+  transition: transform 1.15s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .hero--landing .hero__content {
   position: absolute;
@@ -335,9 +337,11 @@ html.nav-open, html.nav-open body { overflow: hidden; }
   bottom: calc(var(--nav-height) + 2.5rem);
   max-width: 680px;
   z-index: 2;
-  opacity: var(--hero-search-opacity, 1);
-  transition: opacity 0.2s linear;
+  opacity: var(--hero-search-opacity, 0);
+  transform: translateY(var(--hero-search-y, 14px));
+  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
+
 .hero__search {
   display: flex;
   align-items: center;
@@ -578,6 +582,9 @@ html.nav-open, html.nav-open body { overflow: hidden; }
   aspect-ratio: 3 / 4;
   border-radius: var(--radius-md);
   overflow: hidden;
+  transform: perspective(900px) rotateX(var(--state-tilt-x, 0deg)) rotateY(var(--state-tilt-y, 0deg));
+  transition: transform 0.28s ease;
+  will-change: transform;
 }
 .states__item img {
   position: absolute; inset: 0;
@@ -585,7 +592,7 @@ html.nav-open, html.nav-open body { overflow: hidden; }
   object-fit: cover;
   transition: transform 0.4s ease;
 }
-.states__item a:hover img { transform: scale(1.04); }
+.states__item a:hover img { transform: scale(1.07); }
 .states__item a::after {
   content: "";
   position: absolute; inset: 0;
@@ -596,8 +603,13 @@ html.nav-open, html.nav-open body { overflow: hidden; }
   color: #fff; font-weight: 700; font-size: 1.05rem;
   z-index: 1; letter-spacing: -0.01em;
   line-height: 1.1;
+  transition: transform 0.28s ease;
 }
-@media (max-width: 720px) { .states__grid { grid-template-columns: repeat(2, 1fr); } }
+.states__item a:hover .states__label { transform: translateY(-2px); }
+
+@media (max-width: 720px) { .states__grid { grid-template-columns: repeat(2, 1fr); }
+  .states__item a { transform: none !important; }
+}
 
 /* ----------- Listings grid (rendered from Lofty API data) ----------- */
 .listings-grid {
@@ -730,7 +742,7 @@ html.nav-open, html.nav-open body { overflow: hidden; }
   align-items: center;
 }
 .highlights__cards .listing-card { display: none; }
-.highlights__cards .listing-card.is-visible { display: block; }
+.highlights__cards .listing-card.is-visible { display: block; animation-delay: calc(var(--card-order, 0) * 70ms); }
 .highlights__cards .listing-card a {
   border: 0;
   background: transparent;
