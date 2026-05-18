@@ -126,6 +126,16 @@
 
     if (reduceMotion) return;
 
+    const media = hero.querySelector('.hero__video, .hero__img');
+    const search = hero.querySelector('[data-hero-search]');
+    requestAnimationFrame(() => {
+      if (media) media.style.setProperty('--hero-media-scale', '1');
+      if (search) {
+        search.style.setProperty('--hero-search-opacity', '1');
+        search.style.setProperty('--hero-search-y', '0px');
+      }
+    });
+
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
     update();
@@ -223,6 +233,24 @@
     });
   }
 
+
+  function bootStateTilt() {
+    if (reduceMotion) return;
+    document.querySelectorAll('.states__item a').forEach((card) => {
+      card.addEventListener('pointermove', (e) => {
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - 0.5;
+        const y = (e.clientY - r.top) / r.height - 0.5;
+        card.style.setProperty('--state-tilt-x', (y * -4).toFixed(2) + 'deg');
+        card.style.setProperty('--state-tilt-y', (x * 4).toFixed(2) + 'deg');
+      });
+      card.addEventListener('pointerleave', () => {
+        card.style.setProperty('--state-tilt-x', '0deg');
+        card.style.setProperty('--state-tilt-y', '0deg');
+      });
+    });
+  }
+
   // ---------- Highlights pill filter (AJAX) + carousel ----------
   function bootHighlightsFilter() {
     const WINDOW_SIZE = 3;
@@ -238,6 +266,7 @@
       }
 
       const cards = Array.from(grid.querySelectorAll(':scope > .listing-card'));
+      cards.forEach((card, i) => card.style.setProperty('--card-order', String(i % WINDOW_SIZE)));
       const total = cards.length;
       const hasOverflow = total > WINDOW_SIZE;
 
@@ -383,6 +412,7 @@
     bootFlipbook();
     bootMobileNav();
     bootHighlightsFilter();
+    bootStateTilt();
     bootFavorites();
   }
 })();
