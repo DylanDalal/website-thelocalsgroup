@@ -357,18 +357,200 @@
     });
   }
 
-  // ---------- State page favorites switcher ----------
-  function bootFavorites() {
-    const list = document.querySelector('[data-favorites-list]');
-    const detail = document.querySelector('[data-favorites-detail]');
+  // ---------- State page: hero outline trace + map spine ----------
+  // The state's SVG outline draws over the hero photo as it scrolls out, then
+  // re-appears as the map below (same path data, same viewBox). The favorites
+  // list to the right of the map is the scroll driver: which town is centered
+  // in the viewport sets the active pin, pans/zooms the SVG camera, and swaps
+  // the detail card. Everything is native CSS + IntersectionObserver + rAF —
+  // no animation library, no per-frame layout reads inside the rAF callback.
+
+  function bootHeroTrace() {
+    const hero = document.querySelector('[data-hero-trace]');
+    if (!hero) return;
+    const svg = hero.querySelector('[data-hero-trace-svg]');
+    if (!svg) return;
+
+    if (reduceMotion) {
+      hero.style.setProperty('--trace-progress', '1');
+      hero.style.setProperty('--trace-opacity', '0.9');
+      return;
+    }
+
+    // Map scroll position over the hero to two phases:
+    //   0.00 - 0.45 : opacity ramps up
+    //   0.10 - 0.95 : path draws (pathLength=1)
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const rect = hero.getBoundingClientRect();
+        const h = rect.height || 1;
+        // 0 when hero top hits top of viewport, 1 when hero bottom leaves it.
+        const p = Math.min(1, Math.max(0, -rect.top / h));
+        const opacity = Math.min(1, p / 0.45);
+        const draw    = Math.min(1, Math.max(0, (p - 0.10) / 0.85));
+        hero.style.setProperty('--trace-opacity', opacity.toFixed(3));
+        hero.style.setProperty('--trace-progress', draw.toFixed(3));
+        if (p > 0.05) hero.setAttribute('data-trace-armed', '');
+        else          hero.removeAttribute('data-trace-armed');
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+  }
+
+  function bootStateMap() {
+    const root = document.querySelector('[data-state-map]');
+    if (!root) return;
+    const list   = root.querySelector('[data-favorites-list]');
+    const detail = root.querySelector('[data-favorites-detail]');
     if (!list || !detail) return;
+
+    const svg     = root.querySelector('[data-state-svg]');
+    const camera  = root.querySelector('[data-state-camera]');
+    const pinsEl  = root.querySelector('[data-state-pins]');
+    const pins    = pinsEl ? Array.from(pinsEl.querySelectorAll('.state-map__pin')) : [];
+    const items   = Array.from(list.querySelectorAll('[data-town-id]'));
+
+    // Each pin has its destination written into --px/--py custom properties
+    // so the drop-in transition can use those without recomputing in JS.
+    pins.forEach((p) => {
+      const x = p.getAttribute('data-x');
+      const y = p.getAttribute('data-y');
+      p.style.setProperty('--px', x + 'px');
+      p.style.setProperty('--py', y + 'px');
+      // Reset the transform attribute so CSS transform (the drop animation)
+      // takes over from the SVG attribute that placed it for SSR fallback.
+      p.removeAttribute('transform');
+    });
+
+    // ---- Outline draw + pin arm (triggered when the section enters viewport)
+    if (svg && !reduceMotion) {
+      const drawIO = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          // Drive --draw-progress 0 -> 1 over ~1.4s.
+          const start = performance.now();
+          const dur   = 1400;
+          const tick  = (now) => {
+            const t = Math.min(1, (now - start) / dur);
+            // Ease-out cubic.
+            const eased = 1 - Math.pow(1 - t, 3);
+            root.style.setProperty('--draw-progress', eased.toFixed(3));
+            if (t < 1) requestAnimationFrame(tick);
+            else root.setAttribute('data-drawn', '');
+          };
+          requestAnimationFrame(tick);
+          // Arm pins a beat after the outline starts.
+          setTimeout(() => root.setAttribute('data-pins-armed', ''), 350);
+          drawIO.disconnect();
+        });
+      }, { threshold: 0.15 });
+      drawIO.observe(root);
+    } else if (reduceMotion) {
+      root.style.setProperty('--draw-progress', '1');
+      root.setAttribute('data-drawn', '');
+      root.setAttribute('data-pins-armed', '');
+    }
+
+    // ---- Camera: pan/zoom the SVG group toward the active pin.
+    // We zoom modestly (1.25x) so we don't lose the state's overall shape.
+    const ZOOM = 1.25;
+    function focusOn(item, opts) {
+      const x = parseFloat(item.getAttribute('data-x'));
+      const y = parseFloat(item.getAttribute('data-y'));
+      if (!isFinite(x) || !isFinite(y) || !camera || !svg) return;
+      // viewBox center in viewBox units.
+      const vb = svg.viewBox.baseVal;
+      const cx = vb.width  / 2;
+      const cy = vb.height / 2;
+      // Translate so the pin sits at the center, in viewBox units. The transform
+      // origin for the camera group is at (500, 0) — translate first, then scale.
+      const tx = (cx - x) * ZOOM;
+      const ty = (cy - y) * ZOOM - (cy * (ZOOM - 1));
+      camera.style.setProperty('--cam-x', tx.toFixed(1) + 'px');
+      camera.style.setProperty('--cam-y', ty.toFixed(1) + 'px');
+      camera.style.setProperty('--cam-z', String(ZOOM));
+      // Move CSS focus, but don't scroll the page (we are the scroll driver).
+      if (opts && opts.scrollList && item.scrollIntoView) {
+        item.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+
+    // ---- Detail card swap: pure data-attribute swap, no fetch needed.
+    function applyDetail(item) {
+      const img   = detail.querySelector('[data-detail-img]');
+      const blurb = detail.querySelector('[data-detail-blurb]');
+      const link  = detail.querySelector('[data-detail-link]');
+      const dataImg   = item.getAttribute('data-img');
+      const dataBlurb = item.getAttribute('data-blurb');
+      const dataHref  = item.getAttribute('data-href');
+      const dataTitle = item.getAttribute('data-title');
+      if (img && dataImg)     { img.src = dataImg; img.style.animation = 'none'; void img.offsetWidth; img.style.animation = ''; }
+      if (blurb)              { blurb.textContent = dataBlurb || ''; }
+      if (link && dataHref)   {
+        link.href = dataHref;
+        link.textContent = 'View properties in ' + (dataTitle || '') + ' →';
+      }
+    }
+
+    function setActive(index, opts) {
+      items.forEach((el, i) => el.classList.toggle('is-active', i === index));
+      pins.forEach((el, i)  => el.classList.toggle('is-active', i === index));
+      const item = items[index];
+      if (!item) return;
+      focusOn(item, opts);
+      applyDetail(item);
+    }
+
+    // ---- Sync active town to scroll position of the rail (which item is
+    // closest to the vertical center of the sticky map).
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const stickyEl = root.querySelector('.state-map__sticky');
+        const stickyRect = stickyEl ? stickyEl.getBoundingClientRect() : root.getBoundingClientRect();
+        const anchor = stickyRect.top + stickyRect.height / 2;
+        let bestIdx = -1, bestDist = Infinity;
+        items.forEach((el, i) => {
+          const r = el.getBoundingClientRect();
+          const mid = r.top + r.height / 2;
+          const d = Math.abs(mid - anchor);
+          if (d < bestDist) { bestDist = d; bestIdx = i; }
+        });
+        if (bestIdx >= 0 && !items[bestIdx].classList.contains('is-active')) {
+          setActive(bestIdx, { scrollList: false });
+        }
+      });
+    };
+
+    // ---- Click handlers: list and pin both drive the same setActive.
     list.addEventListener('click', (e) => {
       const li = e.target.closest('li[data-town-id]');
       if (!li) return;
-      list.querySelectorAll('li').forEach((el) => el.classList.remove('is-active'));
-      li.classList.add('is-active');
-      // Future: fetch town detail via REST and swap into `detail`.
+      const idx = items.indexOf(li);
+      if (idx >= 0) setActive(idx, { scrollList: true });
     });
+    if (pinsEl) {
+      pinsEl.addEventListener('click', (e) => {
+        const pin = e.target.closest('.state-map__pin');
+        if (!pin) return;
+        const idx = pins.indexOf(pin);
+        if (idx >= 0) setActive(idx, { scrollList: true });
+      });
+    }
+
+    // Initial state: focus the first item once pins are armed.
+    setTimeout(() => setActive(0, { scrollList: false }), 600);
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
   }
 
   // ---------- Boot ----------
@@ -383,6 +565,7 @@
     bootFlipbook();
     bootMobileNav();
     bootHighlightsFilter();
-    bootFavorites();
+    bootHeroTrace();
+    bootStateMap();
   }
 })();

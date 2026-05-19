@@ -41,6 +41,8 @@ add_action('acf/init', function () {
             ['key' => 'field_town_blurb',     'name' => 'blurb',         'label' => 'Short description', 'type' => 'textarea', 'rows' => 4],
             ['key' => 'field_town_gallery',   'name' => 'gallery',       'label' => 'Gallery', 'type' => 'gallery', 'return_format' => 'array'],
             ['key' => 'field_town_idx_query', 'name' => 'idx_query',     'label' => 'IDX query (town slug or polygon)', 'type' => 'text'],
+            ['key' => 'field_town_lat',       'name' => 'latitude',      'label' => 'Latitude  (decimal, e.g. 35.5951)',  'type' => 'text', 'instructions' => 'Paste from Google Maps. Used to place the town pin on the state map.'],
+            ['key' => 'field_town_lng',       'name' => 'longitude',     'label' => 'Longitude (decimal, e.g. -82.5515)', 'type' => 'text'],
         ],
     ]);
 

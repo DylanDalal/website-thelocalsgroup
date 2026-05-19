@@ -819,6 +819,278 @@ html.nav-open, html.nav-open body { overflow: hidden; }
 .favorites__detail a { display: inline-block; margin-top: 0.5rem; font-size: 0.875rem; border-bottom: 1px solid currentColor; padding-bottom: 1px; }
 @media (max-width: 720px) { .favorites__layout { grid-template-columns: 1fr; gap: 1.5rem; } }
 
+/* ----------- State page hero trace (outline that draws over the photo) -----------
+ * Same path data as the .state-map section below, so as the user scrolls from the
+ * hero into the favorites section the outline visually "continues" rather than
+ * appearing from nowhere. JS drives --trace-progress 0..1 via scroll. */
+.hero--state-traced .hero__media { transition: filter 600ms ease; }
+.hero--state-traced[data-trace-armed] .hero__media { filter: saturate(0.55) brightness(0.78); }
+.hero__trace {
+  position: absolute;
+  inset: 8% 6%;
+  width: auto; height: auto;
+  max-width: 88%; max-height: 84%;
+  margin: auto;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 1;
+  opacity: var(--trace-opacity, 0);
+  transition: opacity 400ms ease;
+}
+.hero__trace-path {
+  fill: rgba(53, 121, 118, 0.12);
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--trace-progress, 0));
+  filter: drop-shadow(0 0 14px rgba(53,121,118,0.55));
+}
+
+/* ----------- State map (replaces favorites layout) -----------
+ * Page-spanning sticky map. The state outline draws as the section enters the
+ * viewport, then pins drop in a staggered cascade. The list on the right is
+ * the scroll driver — its position within the section sets which pin/town is
+ * "active", which also pans/zooms the SVG camera and swaps the detail card. */
+.state-map { padding-top: clamp(2.5rem, 6vw, 5rem); padding-bottom: 0; position: relative; }
+.state-map__title { margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+.state-map__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: start;
+}
+
+/* Stage: the left column the sticky map lives inside. Tall enough that the
+ * list on the right has scroll room while the map stays pinned. */
+.state-map__stage { position: relative; }
+.state-map__sticky {
+  position: sticky;
+  top: calc(var(--nav-height) + 1rem);
+  height: min(82vh, 720px);
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+.state-map__svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* The camera transform is updated via JS for pan/zoom-to-pin. */
+}
+.state-map__camera {
+  transform-box: view-box;
+  transform-origin: 50% 0;
+  transform: translate(var(--cam-x, 0px), var(--cam-y, 0px)) scale(var(--cam-z, 1));
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.state-map__fill {
+  fill: color-mix(in srgb, var(--color-accent) 6%, transparent);
+  stroke: none;
+}
+.state-map__outline {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--draw-progress, 0));
+  filter: drop-shadow(0 6px 18px rgba(53,121,118,0.25));
+}
+.state-map[data-drawn] .state-map__outline {
+  /* After full draw, drop the dasharray so antialiasing settles. */
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+}
+
+/* Pins drop in sequence. Each pin animates after its own per-element delay
+ * (set inline on the element via --pin-delay), starting once the section
+ * passes a scroll threshold (JS toggles [data-pins-armed]). */
+.state-map__pin {
+  opacity: 0;
+  transform-box: view-box;
+  transform: translate(var(--px, 0), calc(var(--py, 0) - 36px));
+  transition:
+    opacity 500ms ease var(--pin-delay, 0ms),
+    transform 700ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--pin-delay, 0ms);
+  cursor: pointer;
+}
+.state-map[data-pins-armed] .state-map__pin {
+  opacity: 1;
+  transform: translate(var(--px, 0), var(--py, 0));
+}
+.state-map__pin-ring {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.2;
+  opacity: 0;
+  vector-effect: non-scaling-stroke;
+  transform-origin: center;
+  transform: scale(0.4);
+  transition: opacity 360ms ease, transform 500ms cubic-bezier(0.22,1,0.36,1);
+}
+.state-map__pin-dot {
+  fill: var(--color-accent);
+  stroke: #fff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  transition: transform 360ms cubic-bezier(0.22,1,0.36,1), fill 200ms;
+  transform-origin: center;
+}
+.state-map__pin-label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--color-fg);
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity 240ms ease;
+  pointer-events: none;
+}
+.state-map__pin.is-active .state-map__pin-dot {
+  transform: scale(1.7);
+  fill: var(--color-accent-hover);
+  filter: drop-shadow(0 0 6px rgba(53,121,118,0.8));
+}
+.state-map__pin.is-active .state-map__pin-ring  { opacity: 1; transform: scale(1.5); }
+.state-map__pin.is-active .state-map__pin-label { opacity: 1; }
+.state-map__pin:hover .state-map__pin-label { opacity: 1; }
+
+/* Pulse rings on active pin — subtle, infinite. */
+.state-map__pin.is-active::after { /* not possible on SVG; pseudo handled below as <circle> would need JS. Skipped. */ }
+@keyframes locals-pin-pulse {
+  0%   { stroke-opacity: 0.9; transform: scale(1); }
+  100% { stroke-opacity: 0;   transform: scale(2.6); }
+}
+
+.state-map__compass {
+  position: absolute;
+  right: 0; top: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(3.5rem, 8vw, 6rem);
+  color: var(--color-accent);
+  opacity: 0.18;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* Rail: the scrolling list on the right that drives the camera. */
+.state-map__rail {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+}
+.state-map__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+  font-family: var(--font-serif);
+}
+.state-map__list-item {
+  position: relative;
+  cursor: pointer;
+  color: var(--color-muted);
+  transition: color 220ms ease;
+}
+.state-map__list-item button {
+  background: none;
+  border: 0;
+  padding: 0.65rem 0 0.65rem 3.25rem;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 0.9rem;
+  border-bottom: 1px solid transparent;
+  transition: border-color 220ms ease, padding 220ms ease;
+}
+.state-map__list-item button::before {
+  /* Connector line from numeral to active item. */
+  content: "";
+  position: absolute;
+  left: 0; top: 50%;
+  width: 2.5rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.2;
+  transform: scaleX(0.35);
+  transform-origin: left center;
+  transition: transform 320ms cubic-bezier(0.22,1,0.36,1), opacity 220ms;
+}
+.state-map__list-num {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--color-accent);
+  font-weight: 600;
+  font-feature-settings: "tnum";
+}
+.state-map__list-name {
+  font-size: clamp(1.2rem, 1.6vw, 1.6rem);
+  font-weight: 400;
+}
+.state-map__list-item.is-active { color: var(--color-fg); }
+.state-map__list-item.is-active button::before { transform: scaleX(1); opacity: 0.6; }
+.state-map__list-item.is-active .state-map__list-name { font-weight: 600; }
+.state-map__list-item:hover { color: var(--color-fg); }
+
+.state-map__detail { min-height: 200px; }
+.state-map__detail img {
+  width: 100%;
+  aspect-ratio: 16/10;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  opacity: 0;
+  animation: locals-fade-in 480ms ease forwards;
+}
+.state-map__detail p {
+  color: var(--color-fg);
+  font-size: 0.97rem;
+  max-width: 52ch;
+  line-height: 1.6;
+}
+.state-map__detail a {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-accent);
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+}
+
+@keyframes locals-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 880px) {
+  .state-map__layout { grid-template-columns: 1fr; }
+  .state-map__stage { order: -1; }
+  .state-map__sticky { position: static; height: min(60vh, 480px); }
+  .state-map__compass { font-size: 3rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .state-map__outline { stroke-dashoffset: 0 !important; stroke-dasharray: none !important; }
+  .state-map__pin { opacity: 1 !important; transform: translate(var(--px,0), var(--py,0)) !important; transition: none !important; }
+  .state-map__camera { transition: none !important; }
+  .hero__trace { opacity: 0.9; }
+  .hero__trace-path { stroke-dashoffset: 0; }
+}
+
 /* ----------- Lifestyle match (landing, below highlights) ----------- */
 .lifestyle-match {
   display: grid;

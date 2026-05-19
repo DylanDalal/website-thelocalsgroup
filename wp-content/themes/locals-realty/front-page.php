@@ -223,7 +223,7 @@ $lifestyle_title   = function_exists('get_field') ? get_field('lifestyle_title')
 $lifestyle_body    = function_exists('get_field') ? get_field('lifestyle_body')    : '';
 $lifestyle_image   = function_exists('get_field') ? get_field('lifestyle_image')   : null;
 $lifestyle_eyebrow = $lifestyle_eyebrow ?: __('Lifestyle realty.', 'locals-realty');
-$lifestyle_title   = $lifestyle_title   ?: __('Matching people to new lifestyles.', 'locals-realty');
+$lifestyle_title   = $lifestyle_title   ?: __('Let\'s build your new life.', 'locals-realty');
 $lifestyle_body    = $lifestyle_body    ?: __('A move is more than a transaction — it\'s a chance to step into a different rhythm. We listen for what you\'re actually after (slower mornings, water access, a school, room to breathe) and pair you with the town, neighborhood, and home that fits the life you\'re reaching toward.', 'locals-realty');
 $lifestyle_img_url = locals_image_url($lifestyle_image, 'lifestyle.jpg', 'locals-card');
 ?>
