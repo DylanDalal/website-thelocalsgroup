@@ -91,7 +91,7 @@ function locals_thumbnail_url($post, $fallback = '', $size = 'locals-card') {
 function locals_state_defaults($slug) {
     $map = [
         'florida' => [
-            'lifestyle_tagline'       => 'Sun, salt air, and a slower clock — Florida living, on your terms.',
+            'lifestyle_tagline'       => 'Live where the season never quite ends.',
             'lifestyle_feature_title' => 'Coastal Living',
             'lifestyle_feature_body'  => 'From the quiet inlets of Jupiter to the energy of Miami, Florida rewards a life lived outdoors. Our local agents help you find the right stretch of coast — the boating town, the gated community, the walkable beach village — and the home that fits how you actually plan to spend your weekends.',
             'help_copy'               => 'Whether you\'re relocating from the Northeast, trading up to a waterfront, or buying a second home in the sun, our Florida team knows the inventory, the HOAs, and the insurance landscape. We\'ll guide you through it.',

@@ -28,6 +28,26 @@
       const label = a.querySelector('.states__label');
       if (label) setPref('locals_pref_state', stateAbbr(label.textContent.trim()));
     });
+    // Warm the hero image in the cache as soon as the user shows intent — the
+    // state page reuses the same state-card-*.jpg asset, so by the time the
+    // cross-document view transition fires the image is already decoded and
+    // there's no perceptible delay before the morph begins.
+    let prefetched = false;
+    const warm = () => {
+      if (prefetched) return;
+      const img = a.querySelector('img');
+      const href = img && img.currentSrc ? img.currentSrc : (img && img.src);
+      if (!href) return;
+      prefetched = true;
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = href;
+      document.head.appendChild(link);
+    };
+    a.addEventListener('mouseenter', warm, { once: true });
+    a.addEventListener('touchstart', warm, { passive: true, once: true });
+    a.addEventListener('focus', warm, { once: true });
   });
 
   document.querySelectorAll('[data-listings-filters] button[data-filter]').forEach(function (btn) {
@@ -357,50 +377,73 @@
     });
   }
 
-  // ---------- State page: hero outline trace + map spine ----------
-  // The state's SVG outline draws over the hero photo as it scrolls out, then
-  // re-appears as the map below (same path data, same viewBox). The favorites
-  // list to the right of the map is the scroll driver: which town is centered
-  // in the viewport sets the active pin, pans/zooms the SVG camera, and swaps
-  // the detail card. Everything is native CSS + IntersectionObserver + rAF —
-  // no animation library, no per-frame layout reads inside the rAF callback.
+  // ---------- State page: lifestyle region map + town map spine ----------
+  // The lifestyle pills hover-spotlight regions of a small state outline; the
+  // favorites list to the right of the larger town map is the scroll driver
+  // for the panel below. Native CSS + IntersectionObserver + rAF only.
 
-  function bootHeroTrace() {
-    const hero = document.querySelector('[data-hero-trace]');
-    if (!hero) return;
-    const svg = hero.querySelector('[data-hero-trace-svg]');
-    if (!svg) return;
+  function bootLifestylesMap() {
+    const root = document.querySelector('[data-lifestyles-map]');
+    if (!root) return;
+    const pills = Array.from(root.querySelectorAll('.lifestyles__pills li[data-region]'));
+    if (!pills.length) return;
 
-    if (reduceMotion) {
-      hero.style.setProperty('--trace-progress', '1');
-      hero.style.setProperty('--trace-opacity', '0.9');
-      return;
+    function setActive(slug) {
+      if (!slug) {
+        root.removeAttribute('data-active-region');
+      } else {
+        root.setAttribute('data-active-region', slug);
+      }
+      pills.forEach((li) => {
+        li.classList.toggle('is-region-active', li.getAttribute('data-region') === slug);
+      });
+      // Kick the comet's SMIL motion so it sweeps the path from the start
+      // every time the region is (re-)activated. begin="indefinite" in the
+      // SVG keeps it parked until we call beginElement().
+      if (!slug) return;
+      const motions = root.querySelectorAll(
+        '.lifestyles__map-region[data-region="' + slug + '"] animateMotion'
+      );
+      motions.forEach((m) => {
+        if (typeof m.beginElement === 'function') {
+          try { m.beginElement(); } catch (_) { /* ignore */ }
+        }
+      });
     }
 
-    // Map scroll position over the hero to two phases:
-    //   0.00 - 0.45 : opacity ramps up
-    //   0.10 - 0.95 : path draws (pathLength=1)
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        ticking = false;
-        const rect = hero.getBoundingClientRect();
-        const h = rect.height || 1;
-        // 0 when hero top hits top of viewport, 1 when hero bottom leaves it.
-        const p = Math.min(1, Math.max(0, -rect.top / h));
-        const opacity = Math.min(1, p / 0.45);
-        const draw    = Math.min(1, Math.max(0, (p - 0.10) / 0.85));
-        hero.style.setProperty('--trace-opacity', opacity.toFixed(3));
-        hero.style.setProperty('--trace-progress', draw.toFixed(3));
-        if (p > 0.05) hero.setAttribute('data-trace-armed', '');
-        else          hero.removeAttribute('data-trace-armed');
-      });
-    };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
+    // Default to the first pill so the map isn't blank when the section reveals.
+    const initial = pills[0] && pills[0].getAttribute('data-region');
+    if (initial) setActive(initial);
+
+    pills.forEach((li) => {
+      const slug = li.getAttribute('data-region');
+      li.addEventListener('mouseenter', () => setActive(slug));
+      li.addEventListener('focusin', () => setActive(slug));
+    });
+
+    // Draw the outline once the section comes into view.
+    if (!reduceMotion) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const start = performance.now();
+          const dur = 1100;
+          const tick = (now) => {
+            const t = Math.min(1, (now - start) / dur);
+            const eased = 1 - Math.pow(1 - t, 3);
+            root.style.setProperty('--lifestyles-draw', eased.toFixed(3));
+            if (t < 1) requestAnimationFrame(tick);
+            else root.setAttribute('data-drawn', '');
+          };
+          requestAnimationFrame(tick);
+          io.disconnect();
+        });
+      }, { threshold: 0.2 });
+      io.observe(root);
+    } else {
+      root.style.setProperty('--lifestyles-draw', '1');
+      root.setAttribute('data-drawn', '');
+    }
   }
 
   function bootStateMap() {
@@ -565,7 +608,7 @@
     bootFlipbook();
     bootMobileNav();
     bootHighlightsFilter();
-    bootHeroTrace();
+    bootLifestylesMap();
     bootStateMap();
   }
 })();

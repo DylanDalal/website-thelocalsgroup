@@ -98,6 +98,117 @@ function locals_known_town_latlng($slug) {
 }
 
 /**
+ * Lifestyle region focal points overlayed on the state outline. Each region
+ * is a list of (lat, lng, radius) circles in geographic coordinates; the
+ * markup projects them into viewBox units via locals_project_latlng(). Region
+ * keys match the slugified lifestyle term name (sanitize_title).
+ */
+function locals_state_lifestyle_regions($slug) {
+    static $cache = null;
+    if ($cache === null) {
+        $cache = [
+            'florida' => [
+                // East coast → Keys → Gulf coast → Panhandle. Order matters:
+                // the path that strokes in on hover follows this sequence.
+                'coastal-living' => [
+                    [30.395, -81.420], // Jacksonville Beach
+                    [29.215, -81.020], // Daytona
+                    [28.083, -80.604], // Melbourne / Space Coast
+                    [27.640, -80.398], // Vero
+                    [26.706, -80.036], // Palm Beach
+                    [26.121, -80.137], // Fort Lauderdale
+                    [25.762, -80.192], // Miami
+                    [25.085, -80.450], // Upper Keys
+                    [24.700, -80.980], // Marathon
+                    [25.140, -81.700], // Cape Sable bend
+                    [26.142, -81.795], // Naples
+                    [26.640, -81.872], // Fort Myers
+                    [27.336, -82.531], // Sarasota
+                    [27.768, -82.640], // St. Petersburg
+                    [29.190, -82.997], // Cedar Key / Nature Coast
+                    [30.157, -85.658], // Panama City Beach
+                    [30.396, -86.620], // Destin
+                    [30.394, -87.220], // Pensacola
+                ],
+                // Panhandle → North-central → Central → Heartland.
+                'small-towns' => [
+                    [30.438, -84.281], // Tallahassee
+                    [30.190, -82.640], // Lake City
+                    [29.652, -82.325], // Gainesville
+                    [29.187, -82.140], // Ocala
+                    [28.879, -81.265], // Sanford / DeLand
+                    [27.498, -81.450], // Sebring
+                ],
+                // Keys up the Gulf coast to the Forgotten Coast.
+                'fishing-focused' => [
+                    [24.555, -81.780], // Key West
+                    [24.700, -80.980], // Marathon
+                    [25.144, -80.397], // Islamorada
+                    [26.080, -80.140], // Hillsboro / SE coast
+                    [26.640, -81.872], // Fort Myers
+                    [27.336, -82.531], // Sarasota
+                    [28.620, -82.730], // Homosassa
+                    [29.652, -83.392], // Steinhatchee
+                    [29.840, -84.305], // Apalachicola
+                    [30.395, -86.620], // Destin
+                ],
+                'theme-parks' => [
+                    [28.385, -81.563], // Disney
+                    [28.474, -81.467], // Universal
+                    [28.538, -81.379], // Orlando downtown
+                    [28.380, -81.510], // SeaWorld
+                    [28.385, -81.563], // close the loop back to Disney
+                ],
+            ],
+        ];
+    }
+    return isset($cache[$slug]) ? $cache[$slug] : [];
+}
+
+/**
+ * Build a smoothed SVG d-string through a list of projected points, using
+ * the midpoint-quadratic technique. The curve passes through every point
+ * and reads as a single continuous stroke for the region's coastline/route.
+ */
+function locals_smooth_path_d($pts) {
+    $n = count($pts);
+    if ($n === 0) { return ''; }
+    $d = sprintf('M%.1f,%.1f', $pts[0]['x'], $pts[0]['y']);
+    if ($n === 1) { return $d; }
+    if ($n === 2) {
+        return $d . sprintf(' L%.1f,%.1f', $pts[1]['x'], $pts[1]['y']);
+    }
+    // Move to the midpoint between the first two points so the first
+    // quadratic segment is anchored cleanly.
+    $mx = ($pts[0]['x'] + $pts[1]['x']) / 2;
+    $my = ($pts[0]['y'] + $pts[1]['y']) / 2;
+    $d .= sprintf(' L%.1f,%.1f', $mx, $my);
+    for ($i = 1; $i < $n - 1; $i++) {
+        $mx = ($pts[$i]['x'] + $pts[$i + 1]['x']) / 2;
+        $my = ($pts[$i]['y'] + $pts[$i + 1]['y']) / 2;
+        $d .= sprintf(' Q%.1f,%.1f %.1f,%.1f', $pts[$i]['x'], $pts[$i]['y'], $mx, $my);
+    }
+    $d .= sprintf(' L%.1f,%.1f', $pts[$n - 1]['x'], $pts[$n - 1]['y']);
+    return $d;
+}
+
+/**
+ * Project a region's geographic focal points into viewBox units for inline SVG.
+ * Returns an array of ['x','y','r'] entries. Empty if the state has no geom.
+ */
+function locals_project_region($region, $slug) {
+    $out = [];
+    foreach ($region as $pt) {
+        [$lat, $lng, $r] = array_pad($pt, 3, 36);
+        $xy = locals_project_latlng($lat, $lng, $slug);
+        if ($xy) {
+            $out[] = ['x' => $xy[0], 'y' => $xy[1], 'r' => (int) $r];
+        }
+    }
+    return $out;
+}
+
+/**
  * Resolve a town's [lat, lng] from ACF fields, then known-town fallback.
  */
 function locals_town_latlng($town_post) {

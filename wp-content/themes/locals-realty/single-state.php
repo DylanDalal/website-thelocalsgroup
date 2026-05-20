@@ -60,20 +60,15 @@ while (have_posts()) : the_post();
 ?>
 
 <?php $state_geom = locals_state_map_geom($state_slug); ?>
-<section class="hero hero--state<?php echo $state_geom ? ' hero--state-traced' : ''; ?>"
-         <?php if ($state_geom) : ?>data-hero-trace data-state="<?php echo esc_attr($state_slug); ?>"<?php endif; ?>>
+<section class="hero hero--state" data-state="<?php echo esc_attr($state_slug); ?>">
     <div class="hero__media">
         <?php if ($hero_url) : ?>
             <img class="hero__img"
                  src="<?php echo esc_url($hero_url); ?>"
                  alt=""
+                 fetchpriority="high"
+                 decoding="sync"
                  style="view-transition-name: state-photo-<?php echo esc_attr($state_slug); ?>;">
-        <?php endif; ?>
-        <?php if ($state_geom) : ?>
-            <svg class="hero__trace" viewBox="0 0 <?php echo esc_attr($state_geom['view_w']); ?> <?php echo esc_attr($state_geom['view_h']); ?>"
-                 preserveAspectRatio="xMidYMid meet" aria-hidden="true" data-hero-trace-svg>
-                <path class="hero__trace-path" d="<?php echo esc_attr($state_geom['path']); ?>" pathLength="1" />
-            </svg>
         <?php endif; ?>
     </div>
     <div class="hero__content">
@@ -258,46 +253,105 @@ if ($state_slug === 'florida') :
     </div>
 </section>
 
-<section class="lifestyles container" data-reveal>
+<?php
+$lifestyle_pills = [];
+if ($lifestyles && !is_wp_error($lifestyles)) {
+    foreach ($lifestyles as $term) {
+        $lifestyle_pills[] = [
+            'name' => $term->name,
+            'slug' => $term->slug,
+            'href' => get_term_link($term),
+        ];
+    }
+} else {
+    foreach (['Coastal Living', 'Small Towns', 'Fishing Focused', 'Theme Parks'] as $name) {
+        $lifestyle_pills[] = [
+            'name' => $name,
+            'slug' => sanitize_title($name),
+            'href' => '',
+        ];
+    }
+}
+$region_data = locals_state_lifestyle_regions($state_slug);
+$has_lifestyle_map = $state_geom && !empty($region_data);
+$active_slug = !empty($lifestyle_pills) ? $lifestyle_pills[0]['slug'] : '';
+?>
+<section class="lifestyles container<?php echo $has_lifestyle_map ? ' lifestyles--mapped' : ''; ?>"
+         data-reveal
+         <?php if ($has_lifestyle_map) : ?>data-lifestyles-map data-state="<?php echo esc_attr($state_slug); ?>"<?php endif; ?>>
     <ul class="lifestyles__pills" data-lifestyles>
-        <?php
-        if ($lifestyles && !is_wp_error($lifestyles)) {
-            foreach ($lifestyles as $i => $term) {
-                $cls = $i === 0 ? 'is-active' : '';
-                printf(
-                    '<li class="%s"><a href="%s">%s</a></li>%s',
-                    esc_attr($cls),
-                    esc_url(get_term_link($term)),
-                    esc_html($term->name),
-                    $i < count($lifestyles) - 1 ? '<li aria-hidden="true">&middot;</li>' : ''
-                );
-            }
-        } else {
-            $defaults = ['Coastal Living', 'Small Towns', 'Fishing Focused', 'Theme Parks'];
-            foreach ($defaults as $i => $name) {
-                $cls = $i === 1 ? 'is-active' : '';
-                printf(
-                    '<li class="%s">%s</li>%s',
-                    esc_attr($cls),
-                    esc_html($name),
-                    $i < count($defaults) - 1 ? '<li aria-hidden="true">&middot;</li>' : ''
-                );
-            }
-        }
-        ?>
+        <?php foreach ($lifestyle_pills as $i => $p) :
+            $cls = $i === 0 ? 'is-active' : ''; ?>
+            <li class="<?php echo esc_attr($cls); ?>" data-region="<?php echo esc_attr($p['slug']); ?>">
+                <?php if ($p['href']) : ?>
+                    <a href="<?php echo esc_url($p['href']); ?>"><?php echo esc_html($p['name']); ?></a>
+                <?php else : ?>
+                    <?php echo esc_html($p['name']); ?>
+                <?php endif; ?>
+            </li>
+            <?php if ($i < count($lifestyle_pills) - 1) : ?>
+                <li aria-hidden="true">&middot;</li>
+            <?php endif; ?>
+        <?php endforeach; ?>
     </ul>
 
     <div class="lifestyles__feature">
-        <div class="lifestyles__feature-media">
-            <?php
-            for ($n = 1; $n <= 3; $n++) {
-                $u = locals_image_url(null, "lifestyle-small-towns-{$n}.jpg");
-                if ($u) {
-                    echo '<img src="' . esc_url($u) . '" alt="">';
+        <?php if ($has_lifestyle_map) : ?>
+            <div class="lifestyles__map" data-lifestyles-map-svg>
+                <svg viewBox="0 0 <?php echo esc_attr($state_geom['view_w']); ?> <?php echo esc_attr($state_geom['view_h']); ?>"
+                     preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                    <path class="lifestyles__map-fill" d="<?php echo esc_attr($state_geom['path']); ?>" />
+                    <path class="lifestyles__map-outline" d="<?php echo esc_attr($state_geom['path']); ?>" pathLength="1" />
+                    <g class="lifestyles__map-regions">
+                        <?php foreach ($region_data as $region_slug => $points) :
+                            $projected = locals_project_region($points, $state_slug);
+                            if (empty($projected)) { continue; }
+                            $path_d   = locals_smooth_path_d($projected);
+                            $path_id  = 'lm-path-' . $state_slug . '-' . $region_slug;
+                            $motion_d = max(2.4, count($projected) * 0.55);
+                        ?>
+                            <g class="lifestyles__map-region" data-region="<?php echo esc_attr($region_slug); ?>">
+                                <path id="<?php echo esc_attr($path_id); ?>"
+                                      class="lifestyles__map-region-line"
+                                      d="<?php echo esc_attr($path_d); ?>"
+                                      pathLength="1" />
+                                <g class="lifestyles__map-region-dots">
+                                    <?php foreach ($projected as $j => $pt) : ?>
+                                        <circle class="lifestyles__map-region-dot"
+                                                cx="<?php echo esc_attr($pt['x']); ?>"
+                                                cy="<?php echo esc_attr($pt['y']); ?>"
+                                                r="5"
+                                                style="--dot-delay: <?php echo (int) ($j * 70); ?>ms; --pulse-delay: <?php echo (int) ($j * 180); ?>ms" />
+                                    <?php endforeach; ?>
+                                </g>
+                                <circle class="lifestyles__map-region-comet" r="4">
+                                    <animateMotion dur="<?php echo esc_attr($motion_d); ?>s"
+                                                   repeatCount="indefinite"
+                                                   rotate="auto"
+                                                   begin="indefinite"
+                                                   keyTimes="0;1"
+                                                   keySplines="0.4 0 0.6 1"
+                                                   calcMode="spline">
+                                        <mpath href="#<?php echo esc_attr($path_id); ?>" />
+                                    </animateMotion>
+                                </circle>
+                            </g>
+                        <?php endforeach; ?>
+                    </g>
+                </svg>
+            </div>
+        <?php else : ?>
+            <div class="lifestyles__feature-media">
+                <?php
+                for ($n = 1; $n <= 3; $n++) {
+                    $u = locals_image_url(null, "lifestyle-small-towns-{$n}.jpg");
+                    if ($u) {
+                        echo '<img src="' . esc_url($u) . '" alt="">';
+                    }
                 }
-            }
-            ?>
-        </div>
+                ?>
+            </div>
+        <?php endif; ?>
         <div class="lifestyles__feature-body">
             <h3><?php echo esc_html($feature_title); ?></h3>
             <p><?php echo esc_html($feature_body); ?></p>
