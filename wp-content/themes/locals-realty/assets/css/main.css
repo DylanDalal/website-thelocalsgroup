@@ -1707,10 +1707,25 @@ html.nav-open, html.nav-open body { overflow: hidden; }
 .mission-reveal__beat--life {
   opacity: var(--p2);
   transform: translate3d(0, calc((1 - var(--p2)) * 8vh), 0);
-  background: #0b0b0b;
   color: #fff;
   z-index: 2;
+  /* Image is wired via inline style; this only handles the framing. */
+  background-color: #0b0b0b;
+  background-repeat: no-repeat;
+  background-position: 50% calc(50% - (var(--p) * 4%));
+  background-size: calc(var(--kb) * 110%) auto;
+  isolation: isolate;
 }
+.mission-reveal__beat-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.10) 35%, rgba(0,0,0,0.55) 100%);
+  z-index: 0;
+}
+.mission-reveal__beat--life > .mission-reveal__kicker,
+.mission-reveal__beat--life > .mission-reveal__big { position: relative; z-index: 1; }
 .mission-reveal__kicker {
   font-family: var(--font-serif);
   font-style: italic;
@@ -1719,25 +1734,24 @@ html.nav-open, html.nav-open body { overflow: hidden; }
   margin: 0 0 0.5vh;
   color: var(--color-muted);
 }
-.mission-reveal__kicker--light { color: rgba(255,255,255,0.78); }
+.mission-reveal__kicker--light {
+  color: rgba(255,255,255,0.92);
+  text-shadow: 0 1px 12px rgba(0,0,0,0.35);
+}
 .mission-reveal__big {
   font-family: var(--font-serif);
   font-weight: 400;
-  font-size: clamp(5rem, 22vw, 26rem);
+  font-size: clamp(3.5rem, 14vw, 14rem);
   line-height: 0.88;
   letter-spacing: -0.04em;
   margin: 0;
   color: var(--color-fg);
+  max-width: 100%;
 }
-.mission-reveal__big--img {
-  background-repeat: no-repeat;
-  background-position: 50% calc(50% - (var(--p) * 6%));
-  background-size: calc(var(--kb) * 115%) auto;
-  -webkit-background-clip: text;
-          background-clip: text;
-  color: transparent;
-  /* Halo so the type stays legible if the image runs dark */
-  text-shadow: 0 0 60px rgba(255,255,255,0.04);
+.mission-reveal__big--knockout {
+  color: #fff;
+  mix-blend-mode: difference;
+  text-shadow: none;
 }
 .mission-reveal__caret {
   position: absolute;
@@ -1762,7 +1776,8 @@ html.nav-open, html.nav-open body { overflow: hidden; }
 }
 @media (max-width: 720px) {
   .mission-reveal { min-height: 200vh; }
-  .mission-reveal__big { font-size: clamp(4rem, 26vw, 18rem); }
+  .mission-reveal__big { font-size: clamp(2.75rem, 17vw, 9rem); }
+  .mission-reveal__beat { padding: 6vh 5vw; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mission-reveal { min-height: auto; }

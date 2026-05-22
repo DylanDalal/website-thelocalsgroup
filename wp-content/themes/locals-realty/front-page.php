@@ -92,13 +92,15 @@ if ($highlight_towns) {
 
 <?php
 // Mission scroll-reveal: two-beat curtain that plays before the existing
-// mission grid. Beat 1 is "Home." in solid type; beat 2 is "Lifestyle." with
-// an image fill (background-clip: text). Wired via inline CSS vars so the
-// art-direction can move into ACF later without touching JS.
+// mission grid. Beat 1 is "Home." in solid type on white; beat 2 is
+// "Lifestyle." in white type with mix-blend-difference over a full-bleed
+// southern-town photo. Wired via inline style so the image can move into
+// ACF (mission_reveal_image) without touching JS or CSS.
 $reveal_life_img = function_exists('get_field') ? get_field('mission_reveal_image') : '';
+// High-res Savannah, GA — oak-canopied southern road (Jacob Mathers, 3857x2169).
 $reveal_life_img = is_array($reveal_life_img) && !empty($reveal_life_img['url'])
     ? $reveal_life_img['url']
-    : ($reveal_life_img ?: 'https://images.unsplash.com/photo-1770225816712-c6ee43ac12c3?w=1800&q=80&auto=format&fit=crop');
+    : ($reveal_life_img ?: 'https://images.unsplash.com/photo-1623184185917-d2e8ec0daa27?w=2400&q=85&auto=format&fit=crop');
 ?>
 <section class="mission-reveal" data-mission-reveal aria-hidden="true">
     <div class="mission-reveal__pin">
@@ -106,10 +108,11 @@ $reveal_life_img = is_array($reveal_life_img) && !empty($reveal_life_img['url'])
             <p class="mission-reveal__kicker">The right</p>
             <h2 class="mission-reveal__big">Home.</h2>
         </div>
-        <div class="mission-reveal__beat mission-reveal__beat--life">
+        <div class="mission-reveal__beat mission-reveal__beat--life"
+             style="background-image:url('<?php echo esc_url($reveal_life_img); ?>');">
+            <div class="mission-reveal__beat-veil" aria-hidden="true"></div>
             <p class="mission-reveal__kicker mission-reveal__kicker--light">The right</p>
-            <h2 class="mission-reveal__big mission-reveal__big--img"
-                style="background-image:url('<?php echo esc_url($reveal_life_img); ?>');">Lifestyle.</h2>
+            <h2 class="mission-reveal__big mission-reveal__big--knockout">Lifestyle.</h2>
         </div>
         <div class="mission-reveal__caret" aria-hidden="true">scroll</div>
     </div>
@@ -252,8 +255,9 @@ $lifestyle_title   = $lifestyle_title   ?: __('Let\'s build your new life.', 'lo
 $lifestyle_body    = $lifestyle_body    ?: __('A move is more than a transaction — it\'s a chance to step into a different rhythm. We listen for what you\'re actually after (slower mornings, water access, a school, room to breathe) and pair you with the town, neighborhood, and home that fits the life you\'re reaching toward.', 'locals-realty');
 $lifestyle_img_url = locals_image_url($lifestyle_image, 'lifestyle.jpg', 'locals-card');
 // Fall back to a cinematic small-town dusk shot until an ACF image is set.
+// High-res Charleston, SC street (Alexander Wark Feeney, 5184x3456).
 $lifestyle_bg_url  = $lifestyle_img_url
-    ?: 'https://images.unsplash.com/photo-1648503944373-9a4978792895?w=2000&q=80&auto=format&fit=crop';
+    ?: 'https://images.unsplash.com/photo-1642534683740-2334ba785e3e?w=2400&q=85&auto=format&fit=crop';
 ?>
 <section class="lifestyle-stack" data-lifestyle-stack>
     <div class="lifestyle-stack__media" aria-hidden="true">
