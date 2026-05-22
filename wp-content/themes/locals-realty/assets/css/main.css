@@ -1668,3 +1668,239 @@ html.nav-open, html.nav-open body { overflow: hidden; }
   border-radius: var(--radius-sm);
   font: inherit;
 }
+
+/* ----------- Mission scroll-reveal (landing) ----------- */
+/* Tall section that pins a 100vh stage. JS writes --p, --p1, --p2, --kb. */
+.mission-reveal {
+  --p: 0;
+  --p1: 1;
+  --p2: 0;
+  --kb: 1;
+  position: relative;
+  background: var(--color-bg);
+  min-height: 220vh;
+}
+.mission-reveal__pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.mission-reveal__beat {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  padding: 6vh 6vw;
+  pointer-events: none;
+  text-align: center;
+}
+.mission-reveal__beat--home {
+  opacity: var(--p1);
+  transform: translate3d(0, calc((1 - var(--p1)) * -8vh), 0);
+  background: var(--color-bg);
+  z-index: 1;
+}
+.mission-reveal__beat--life {
+  opacity: var(--p2);
+  transform: translate3d(0, calc((1 - var(--p2)) * 8vh), 0);
+  background: #0b0b0b;
+  color: #fff;
+  z-index: 2;
+}
+.mission-reveal__kicker {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(1rem, 1.6vw, 1.4rem);
+  letter-spacing: 0.02em;
+  margin: 0 0 0.5vh;
+  color: var(--color-muted);
+}
+.mission-reveal__kicker--light { color: rgba(255,255,255,0.78); }
+.mission-reveal__big {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(5rem, 22vw, 26rem);
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  margin: 0;
+  color: var(--color-fg);
+}
+.mission-reveal__big--img {
+  background-repeat: no-repeat;
+  background-position: 50% calc(50% - (var(--p) * 6%));
+  background-size: calc(var(--kb) * 115%) auto;
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  /* Halo so the type stays legible if the image runs dark */
+  text-shadow: 0 0 60px rgba(255,255,255,0.04);
+}
+.mission-reveal__caret {
+  position: absolute;
+  bottom: 4vh;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  opacity: calc(1 - var(--p) * 1.4);
+  z-index: 3;
+}
+.mission-reveal__caret::after {
+  content: "";
+  display: block;
+  margin: 0.4rem auto 0;
+  width: 1px;
+  height: 28px;
+  background: currentColor;
+}
+@media (max-width: 720px) {
+  .mission-reveal { min-height: 200vh; }
+  .mission-reveal__big { font-size: clamp(4rem, 26vw, 18rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mission-reveal { min-height: auto; }
+  .mission-reveal__pin { position: relative; height: auto; padding: 6vh 0; }
+  .mission-reveal__beat { position: relative; opacity: 1; transform: none; }
+  .mission-reveal__beat--home { display: none; }
+  .mission-reveal__caret { display: none; }
+}
+
+/* ----------- Lifestyle stacked-type panel (landing) ----------- */
+.lifestyle-stack {
+  position: relative;
+  background: #0b0b0b;
+  color: #fff;
+  padding: 14vh 0 16vh;
+  overflow: hidden;
+  isolation: isolate;
+}
+.lifestyle-stack__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.lifestyle-stack__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+  filter: contrast(1.08) saturate(1.05);
+  transform: scale(1.06);
+  transition: transform 18s linear;
+}
+.lifestyle-stack.is-in .lifestyle-stack__media img { transform: scale(1.14); }
+.lifestyle-stack__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 100%),
+    linear-gradient(180deg, rgba(11,11,11,0.55) 0%, rgba(11,11,11,0.25) 30%, rgba(11,11,11,0.65) 100%);
+}
+.lifestyle-stack__title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0 4vw;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(4rem, 15vw, 20rem);
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  mix-blend-mode: difference;
+  display: flex;
+  flex-direction: column;
+}
+.lifestyle-stack__line {
+  display: block;
+  opacity: 0;
+  transform: translate3d(calc(var(--dir, 1) * 22vw), 0, 0);
+  transition:
+    opacity 1s cubic-bezier(0.2, 0.7, 0.1, 1) calc(var(--i, 0) * 110ms),
+    transform 1s cubic-bezier(0.2, 0.7, 0.1, 1) calc(var(--i, 0) * 110ms);
+}
+.lifestyle-stack__line:nth-child(odd)  { align-self: flex-start; }
+.lifestyle-stack__line:nth-child(even) { align-self: flex-end; }
+.lifestyle-stack.is-in .lifestyle-stack__line {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+.lifestyle-stack__cta {
+  position: relative;
+  z-index: 1;
+  margin: 8vh auto 0;
+  padding: 0 4vw;
+  max-width: var(--container, 1200px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 1.5rem 3rem;
+}
+.lifestyle-stack__eyebrow {
+  grid-column: 1 / -1;
+  font-family: var(--font-serif);
+  font-style: italic;
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  color: #c8e8e5;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.7s ease 0.9s, transform 0.7s ease 0.9s;
+}
+.lifestyle-stack__copy {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.86);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.7s ease 1.0s, transform 0.7s ease 1.0s;
+}
+.lifestyle-stack__btn {
+  background: #fff;
+  color: #0b0b0b;
+  padding: 0.85rem 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.7s ease 1.1s, transform 0.7s ease 1.1s, background 0.2s ease;
+}
+.lifestyle-stack__btn:hover {
+  background: var(--color-accent);
+  color: #fff;
+  text-decoration: none;
+}
+.lifestyle-stack.is-in .lifestyle-stack__eyebrow,
+.lifestyle-stack.is-in .lifestyle-stack__copy,
+.lifestyle-stack.is-in .lifestyle-stack__btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (max-width: 720px) {
+  .lifestyle-stack { padding: 10vh 0 12vh; }
+  .lifestyle-stack__title { font-size: clamp(3.25rem, 22vw, 14rem); }
+  .lifestyle-stack__cta { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lifestyle-stack__line,
+  .lifestyle-stack__eyebrow,
+  .lifestyle-stack__copy,
+  .lifestyle-stack__btn {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .lifestyle-stack__media img { transition: none; }
+}

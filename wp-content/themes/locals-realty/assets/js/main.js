@@ -596,6 +596,67 @@
     window.addEventListener('resize', onScroll, { passive: true });
   }
 
+  // ---------- Mission scroll-reveal ----------
+  // Two-beat curtain pinned at top:0 of a 220vh section. JS writes
+  // --p (0..1 scroll progress through the pin), --p1/--p2 (beat alphas),
+  // and --kb (ken-burns scale for the image-filled word).
+  function bootMissionReveal() {
+    const section = document.querySelector('[data-mission-reveal]');
+    if (!section) return;
+    if (reduceMotion) return;
+
+    let ticking = false;
+    function update() {
+      ticking = false;
+      const rect = section.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const total = Math.max(1, rect.height - vh);
+      const p = Math.min(1, Math.max(0, -rect.top / total));
+
+      // Beat 1 ("Home.") holds 0..0.40, fades out 0.40..0.50
+      const p1 = p <= 0.40 ? 1
+               : p >= 0.50 ? 0
+               : 1 - (p - 0.40) / 0.10;
+      // Beat 2 ("Lifestyle.") fades in 0.45..0.55, holds 0.55..1.0
+      const p2 = p <= 0.45 ? 0
+               : p >= 0.55 ? 1
+               : (p - 0.45) / 0.10;
+      // Slow ken-burns on the image-filled word
+      const kb = 1 + p * 0.18;
+
+      section.style.setProperty('--p', p.toFixed(4));
+      section.style.setProperty('--p1', p1.toFixed(4));
+      section.style.setProperty('--p2', p2.toFixed(4));
+      section.style.setProperty('--kb', kb.toFixed(4));
+    }
+    function onScroll() {
+      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    update();
+  }
+
+  // ---------- Lifestyle stacked-type panel ----------
+  // Triggers the staggered slide-in once the panel enters the viewport.
+  function bootLifestyleStack() {
+    const section = document.querySelector('[data-lifestyle-stack]');
+    if (!section) return;
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      section.classList.add('is-in');
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          section.classList.add('is-in');
+          io.disconnect();
+        }
+      });
+    }, { rootMargin: '0px 0px -15% 0px', threshold: 0.15 });
+    io.observe(section);
+  }
+
   // ---------- Boot ----------
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
@@ -606,6 +667,8 @@
     bootReveals();
     bootHeroMorph();
     bootFlipbook();
+    bootMissionReveal();
+    bootLifestyleStack();
     bootMobileNav();
     bootHighlightsFilter();
     bootLifestylesMap();

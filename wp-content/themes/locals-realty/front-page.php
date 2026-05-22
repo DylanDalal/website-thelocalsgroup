@@ -90,6 +90,31 @@ if ($highlight_towns) {
     </form>
 </section>
 
+<?php
+// Mission scroll-reveal: two-beat curtain that plays before the existing
+// mission grid. Beat 1 is "Home." in solid type; beat 2 is "Lifestyle." with
+// an image fill (background-clip: text). Wired via inline CSS vars so the
+// art-direction can move into ACF later without touching JS.
+$reveal_life_img = function_exists('get_field') ? get_field('mission_reveal_image') : '';
+$reveal_life_img = is_array($reveal_life_img) && !empty($reveal_life_img['url'])
+    ? $reveal_life_img['url']
+    : ($reveal_life_img ?: 'https://images.unsplash.com/photo-1770225816712-c6ee43ac12c3?w=1800&q=80&auto=format&fit=crop');
+?>
+<section class="mission-reveal" data-mission-reveal aria-hidden="true">
+    <div class="mission-reveal__pin">
+        <div class="mission-reveal__beat mission-reveal__beat--home">
+            <p class="mission-reveal__kicker">The right</p>
+            <h2 class="mission-reveal__big">Home.</h2>
+        </div>
+        <div class="mission-reveal__beat mission-reveal__beat--life">
+            <p class="mission-reveal__kicker mission-reveal__kicker--light">The right</p>
+            <h2 class="mission-reveal__big mission-reveal__big--img"
+                style="background-image:url('<?php echo esc_url($reveal_life_img); ?>');">Lifestyle.</h2>
+        </div>
+        <div class="mission-reveal__caret" aria-hidden="true">scroll</div>
+    </div>
+</section>
+
 <section class="mission container" data-reveal>
     <div class="mission__main">
         <h2 class="mission__title">The right home.<br>The right lifestyle.</h2>
@@ -226,21 +251,28 @@ $lifestyle_eyebrow = $lifestyle_eyebrow ?: __('Lifestyle realty.', 'locals-realt
 $lifestyle_title   = $lifestyle_title   ?: __('Let\'s build your new life.', 'locals-realty');
 $lifestyle_body    = $lifestyle_body    ?: __('A move is more than a transaction — it\'s a chance to step into a different rhythm. We listen for what you\'re actually after (slower mornings, water access, a school, room to breathe) and pair you with the town, neighborhood, and home that fits the life you\'re reaching toward.', 'locals-realty');
 $lifestyle_img_url = locals_image_url($lifestyle_image, 'lifestyle.jpg', 'locals-card');
+// Fall back to a cinematic small-town dusk shot until an ACF image is set.
+$lifestyle_bg_url  = $lifestyle_img_url
+    ?: 'https://images.unsplash.com/photo-1648503944373-9a4978792895?w=2000&q=80&auto=format&fit=crop';
 ?>
-<section class="container lifestyle-match" data-reveal>
-    <div class="lifestyle-match__body">
-        <p class="lifestyle-match__eyebrow"><?php echo esc_html($lifestyle_eyebrow); ?></p>
-        <h2 class="lifestyle-match__title"><?php echo esc_html($lifestyle_title); ?></h2>
-        <p class="lifestyle-match__copy"><?php echo esc_html($lifestyle_body); ?></p>
-        <a class="btn btn--ghost" href="<?php echo esc_url(home_url('/about')); ?>">
-            <?php esc_html_e('Start the conversation', 'locals-realty'); ?>
+<section class="lifestyle-stack" data-lifestyle-stack>
+    <div class="lifestyle-stack__media" aria-hidden="true">
+        <img src="<?php echo esc_url($lifestyle_bg_url); ?>" alt="" loading="lazy">
+    </div>
+    <h2 class="lifestyle-stack__title" aria-label="<?php echo esc_attr($lifestyle_title); ?>">
+        <span class="lifestyle-stack__line" style="--i:0;--dir:-1;">Let's</span>
+        <span class="lifestyle-stack__line" style="--i:1;--dir:1;">build</span>
+        <span class="lifestyle-stack__line" style="--i:2;--dir:-1;">your</span>
+        <span class="lifestyle-stack__line" style="--i:3;--dir:1;">new</span>
+        <span class="lifestyle-stack__line" style="--i:4;--dir:-1;">life.</span>
+    </h2>
+    <div class="lifestyle-stack__cta">
+        <p class="lifestyle-stack__eyebrow"><?php echo esc_html($lifestyle_eyebrow); ?></p>
+        <p class="lifestyle-stack__copy"><?php echo esc_html($lifestyle_body); ?></p>
+        <a class="btn lifestyle-stack__btn" href="<?php echo esc_url(home_url('/about')); ?>">
+            <?php esc_html_e('Start the conversation', 'locals-realty'); ?> &rarr;
         </a>
     </div>
-    <?php if ($lifestyle_img_url) : ?>
-        <div class="lifestyle-match__media">
-            <img src="<?php echo esc_url($lifestyle_img_url); ?>" alt="" loading="lazy">
-        </div>
-    <?php endif; ?>
 </section>
 
 <section class="container split" data-reveal>
