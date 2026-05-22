@@ -191,10 +191,12 @@ if ($state_slug === 'florida') :
         ['label' => 'Boca Raton',     'city' => 'Boca Raton'],
         ['label' => 'Orlando',        'city' => 'Orlando'],
     ];
-    $fl_pills = array_values(array_filter($fl_pill_candidates, function ($p) {
-        $filter = ['city' => $p['city'], 'state' => 'FL', 'scope' => 'office', 'limit' => 9];
-        return !empty(locals_lofty_listings($filter));
-    }));
+    // Render all candidate pills up-front; empty ones surface the existing
+    // "No active listings" empty state on click. Previously we probed each
+    // city's Lofty listings synchronously during render, which blocked the
+    // document by ~2-4s on a cold cache and made the cross-document View
+    // Transition into this page feel laggy.
+    $fl_pills = $fl_pill_candidates;
     if ($fl_pills) : ?>
 <section class="highlights container" data-reveal>
     <h2 class="section-title"><?php esc_html_e('Florida properties', 'locals-realty'); ?></h2>
@@ -307,34 +309,11 @@ $active_slug = !empty($lifestyle_pills) ? $lifestyle_pills[0]['slug'] : '';
                             $projected = locals_project_region($points, $state_slug);
                             if (empty($projected)) { continue; }
                             $path_d   = locals_smooth_path_d($projected);
-                            $path_id  = 'lm-path-' . $state_slug . '-' . $region_slug;
-                            $motion_d = max(2.4, count($projected) * 0.55);
                         ?>
                             <g class="lifestyles__map-region" data-region="<?php echo esc_attr($region_slug); ?>">
-                                <path id="<?php echo esc_attr($path_id); ?>"
-                                      class="lifestyles__map-region-line"
+                                <path class="lifestyles__map-region-line"
                                       d="<?php echo esc_attr($path_d); ?>"
                                       pathLength="1" />
-                                <g class="lifestyles__map-region-dots">
-                                    <?php foreach ($projected as $j => $pt) : ?>
-                                        <circle class="lifestyles__map-region-dot"
-                                                cx="<?php echo esc_attr($pt['x']); ?>"
-                                                cy="<?php echo esc_attr($pt['y']); ?>"
-                                                r="5"
-                                                style="--dot-delay: <?php echo (int) ($j * 70); ?>ms; --pulse-delay: <?php echo (int) ($j * 180); ?>ms" />
-                                    <?php endforeach; ?>
-                                </g>
-                                <circle class="lifestyles__map-region-comet" r="4">
-                                    <animateMotion dur="<?php echo esc_attr($motion_d); ?>s"
-                                                   repeatCount="indefinite"
-                                                   rotate="auto"
-                                                   begin="indefinite"
-                                                   keyTimes="0;1"
-                                                   keySplines="0.4 0 0.6 1"
-                                                   calcMode="spline">
-                                        <mpath href="#<?php echo esc_attr($path_id); ?>" />
-                                    </animateMotion>
-                                </circle>
                             </g>
                         <?php endforeach; ?>
                     </g>

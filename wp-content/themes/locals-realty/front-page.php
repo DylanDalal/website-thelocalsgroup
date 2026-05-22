@@ -194,13 +194,10 @@ $reveal_life_img = is_array($reveal_life_img) && !empty($reveal_life_img['url'])
 </section>
 
 <?php
-// Probe each pill's filter and drop ones that return no active listings.
-// locals_lofty_listings() caches each filter in a 15-min transient, and the
-// initial render below reuses the same filter shape so it's a cache hit.
-$pills = array_values(array_filter($pills, function ($p) {
-    $filter = ['city' => $p['city'], 'state' => $p['state'], 'scope' => 'office', 'limit' => 9];
-    return !empty(locals_lofty_listings($filter));
-}));
+// Render every candidate pill; the existing "no listings" empty state covers
+// any pill that comes back without active inventory on click. We used to
+// probe each pill's filter here synchronously, but each probe is a 200-500ms
+// Lofty call and a cold cache made the landing page feel slow.
 ?>
 <?php if ($pills) : ?>
 <section class="highlights container" data-reveal>
