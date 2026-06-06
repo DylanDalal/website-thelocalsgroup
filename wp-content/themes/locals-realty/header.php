@@ -68,6 +68,11 @@ $nav_items = [
     </div>
 </header>
 <aside id="site-drawer" class="site-drawer" data-nav-drawer aria-hidden="true">
+    <form class="site-drawer__search" action="<?php echo esc_url(home_url('/search')); ?>" method="get" role="search">
+        <label class="visually-hidden" for="drawer-search-input"><?php esc_html_e('Search properties', 'locals-realty'); ?></label>
+        <input id="drawer-search-input" name="q" type="search" placeholder="<?php esc_attr_e('Search by town, address, agent...', 'locals-realty'); ?>">
+        <button type="submit" aria-label="<?php esc_attr_e('Search', 'locals-realty'); ?>">&rarr;</button>
+    </form>
     <ul>
         <?php foreach ($nav_items as $item) : ?>
             <li><a href="<?php echo esc_url($item['url']); ?>"><?php echo esc_html($item['label']); ?></a></li>

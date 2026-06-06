@@ -37,4 +37,32 @@ add_action('wp_enqueue_scripts', function () {
         file_exists($js_path) ? filemtime($js_path) : LOCALS_REALTY_VERSION,
         true
     );
+
+    // --- Dark homepage redesign: scoped assets, front page only ---
+    if (is_front_page()) {
+        wp_enqueue_style(
+            'locals-realty-home-fonts',
+            'https://fonts.googleapis.com/css2?family=Anton&family=Alfa+Slab+One&family=Sail&display=swap',
+            [],
+            null
+        );
+
+        $home_css = get_template_directory() . '/assets/css/home.css';
+        $home_js  = get_template_directory() . '/assets/js/home.js';
+
+        wp_enqueue_style(
+            'locals-realty-home',
+            LOCALS_REALTY_URI . '/assets/css/home.css',
+            ['locals-realty', 'locals-realty-home-fonts'],
+            file_exists($home_css) ? filemtime($home_css) : LOCALS_REALTY_VERSION
+        );
+
+        wp_enqueue_script(
+            'locals-realty-home',
+            LOCALS_REALTY_URI . '/assets/js/home.js',
+            ['locals-realty'],
+            file_exists($home_js) ? filemtime($home_js) : LOCALS_REALTY_VERSION,
+            true
+        );
+    }
 });

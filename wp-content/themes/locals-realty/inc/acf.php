@@ -100,6 +100,21 @@ add_action('acf/init', function () {
             ['key' => 'field_landing_lifestyle_title',   'name' => 'lifestyle_title',   'label' => 'Lifestyle section title',   'type' => 'text'],
             ['key' => 'field_landing_lifestyle_body',    'name' => 'lifestyle_body',    'label' => 'Lifestyle section body',    'type' => 'textarea', 'rows' => 4],
             ['key' => 'field_landing_lifestyle_image',   'name' => 'lifestyle_image',   'label' => 'Lifestyle section image',   'type' => 'image', 'return_format' => 'array'],
+
+            // --- Dark homepage redesign (all optional; theme falls back to mockup copy) ---
+            ['key' => 'field_home_tab',            'name' => '',                'label' => 'Homepage (Locals Group design)', 'type' => 'tab'],
+            ['key' => 'field_home_intro',          'name' => 'home_intro',      'label' => 'Hero intro paragraph',        'type' => 'textarea', 'rows' => 4],
+            ['key' => 'field_home_group_photo',    'name' => 'home_group_photo','label' => 'Team group photo (hero, right)', 'type' => 'image', 'return_format' => 'array', 'instructions' => 'Transparent-background cutout works best. Falls back to a headshot collage.'],
+            ['key' => 'field_home_action_bg',      'name' => 'home_action_bg',  'label' => 'Find/Sell section background', 'type' => 'image', 'return_format' => 'array'],
+            ['key' => 'field_home_cta_find',       'name' => 'cta_find_url',    'label' => 'CTA — "Find Homes" link',     'type' => 'url'],
+            ['key' => 'field_home_cta_approve',    'name' => 'cta_approve_url', 'label' => 'CTA — "Get Approved" link',   'type' => 'url'],
+            ['key' => 'field_home_cta_sell',       'name' => 'cta_sell_url',    'label' => 'CTA — "Sell Homes" link',     'type' => 'url'],
+            ['key' => 'field_home_touch_body',     'name' => 'touch_body',      'label' => '"Stay in Touch" body',        'type' => 'textarea', 'rows' => 3],
+            ['key' => 'field_home_touch_link',     'name' => 'touch_link',      'label' => '"Stay in Touch" button link', 'type' => 'url'],
+            ['key' => 'field_home_join_vendor',    'name' => 'join_vendor_url', 'label' => 'Join — Preferred Vendor link','type' => 'url'],
+            ['key' => 'field_home_join_lender',    'name' => 'join_lender_url', 'label' => 'Join — Preferred Lender link','type' => 'url'],
+            ['key' => 'field_home_join_affiliate', 'name' => 'join_affiliate_url','label' => 'Join — Business Affiliate link','type' => 'url'],
+            ['key' => 'field_home_join_partner',   'name' => 'join_partner_url','label' => 'Join — Partner with TLG link', 'type' => 'url'],
         ],
     ]);
 });

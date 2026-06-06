@@ -85,6 +85,55 @@ function locals_thumbnail_url($post, $fallback = '', $size = 'locals-card') {
 }
 
 /**
+ * Resolve the homepage agent roster used by the dark landing redesign.
+ *
+ * Source of truth is the `agent` CPT (ordered by menu_order then title). If no
+ * agent posts exist yet, falls back to auto-discovering placeholder headshots
+ * dropped into assets/images/team/ — filenames become display names
+ * (e.g. "rachel_garcia.webp" -> "Rachel Garcia").
+ *
+ * @param int $limit  Max entries to return (0 = all).
+ * @return array<int, array{name:string, role:string, img:string, url:string}>
+ */
+function locals_home_roster($limit = 0) {
+    $out = [];
+
+    $agents = get_posts([
+        'post_type'      => 'agent',
+        'posts_per_page' => $limit > 0 ? $limit : -1,
+        'orderby'        => ['menu_order' => 'ASC', 'title' => 'ASC'],
+    ]);
+    foreach ($agents as $a) {
+        $out[] = [
+            'name' => get_the_title($a),
+            'role' => function_exists('get_field') ? (get_field('role', $a->ID) ?: 'Local Agent') : 'Local Agent',
+            'img'  => locals_thumbnail_url($a, '', 'locals-card'),
+            'url'  => get_permalink($a),
+        ];
+    }
+
+    if (!$out) {
+        $dir = LOCALS_REALTY_DIR . '/assets/images/team';
+        $files = glob($dir . '/*.{webp,jpg,jpeg,png}', GLOB_BRACE) ?: [];
+        sort($files);
+        foreach ($files as $f) {
+            $base = pathinfo($f, PATHINFO_FILENAME);
+            $out[] = [
+                'name' => ucwords(str_replace(['_', '-'], ' ', $base)),
+                'role' => 'Local Agent',
+                'img'  => LOCALS_REALTY_URI . '/assets/images/team/' . rawurlencode(basename($f)),
+                'url'  => '#',
+            ];
+        }
+    }
+
+    if ($limit > 0) {
+        $out = array_slice($out, 0, $limit);
+    }
+    return $out;
+}
+
+/**
  * Per-state default copy used by single-state.php when the corresponding ACF
  * field is empty. Keyed by state slug (post slug of the state CPT).
  */

@@ -1,309 +1,214 @@
 <?php
 /**
- * Landing page.
+ * Landing page — "The Locals Group" dark brand redesign.
  *
- * Sections (Figma):
- *  1. Hero (16:9 video) — "Learn from a local." + search.
- *  2. Mission strip — "The right home. The right lifestyle." + state tagline,
- *     paired with secondary image + "build the next version of your life."
- *  3. By State grid (4 cards).
- *  4. Highlighted Properties — town pills + IDX cards + "View all properties".
- *  5. Meet the Team — split block.
- *  6. Join Today — recruitment split block.
+ * Sections (mockup):
+ *  1. Meet The Locals Group — dark hero, intro copy, team group photo.
+ *  2. Find Homes / Get Approved / Sell Homes — graphic CTAs + flanking agents.
+ *  3. Stay In Touch / Learn The Area — phone mockup, featured agents, feature bar.
+ *  4. Our Locals — agent grid with names in big condensed type.
+ *  5. Join The Team — preferred vendor / lender / affiliate / partner cards.
+ *
+ * Visual styling lives in assets/css/home.css (scoped under body.home) and is
+ * enqueued only on the front page; behaviour in assets/js/home.js.
  */
 if (!defined('ABSPATH')) { exit; }
 get_header();
 
-$mission        = function_exists('get_field') ? get_field('mission') : '';
-$mission        = $mission ?: __('Our mission is simple: combine world-class real estate expertise with innovative marketing that elevates every listing, humanizes every transaction, and builds long-term relationships within the communities we proudly serve.', 'locals-realty');
-$hero_video     = function_exists('get_field') ? get_field('hero_video_url') : '';
-$hero_fallback  = function_exists('get_field') ? get_field('hero_fallback') : null;
-$hero_poster    = locals_image_url($hero_fallback, 'default-landing-hero.jpg', 'locals-hero');
-$default_video  = LOCALS_REALTY_DIR . '/assets/images/default-hero-video.mp4';
-$default_video_url = file_exists($default_video) ? LOCALS_REALTY_URI . '/assets/images/default-hero-video.mp4' : '';
-$hero_video     = $hero_video ?: $default_video_url;
+$gf = function ($name, $default = '') {
+    $v = function_exists('get_field') ? get_field($name) : '';
+    return $v !== '' && $v !== null ? $v : $default;
+};
 
-$states          = get_posts(['post_type' => 'state', 'posts_per_page' => 4, 'orderby' => 'menu_order', 'order' => 'ASC']);
-$state_tagline   = $states
-    ? implode(' ', array_map(fn($s) => esc_html(get_the_title($s)), $states))
-    : 'Florida North Carolina South Carolina Tennessee';
+// ---- Content + fallbacks -------------------------------------------------
+$intro = $gf('home_intro', "The Locals Group is a modern real estate collective built around local expertise, relationship-driven service, and community connection. Our agents help buyers, sellers, and investors navigate each market with confidence — combining neighborhood knowledge, elevated marketing, and trusted guidance from start to finish.");
 
-$highlight_towns = function_exists('get_field') ? (get_field('highlight_towns') ?: []) : [];
+$cta_find    = $gf('cta_find_url',    home_url('/search'));
+$cta_approve = $gf('cta_approve_url', home_url('/get-approved'));
+$cta_sell    = $gf('cta_sell_url',    home_url('/sell'));
 
-// Resolve highlight pills to {label, city, state} so they can drive both the
-// listings filter and the displayed text. Falls back to a hard-coded list
-// if no ACF "Highlighted towns" are set yet.
-$pills = [];
-if ($highlight_towns) {
-    foreach ($highlight_towns as $t) {
-        $tid       = is_object($t) ? $t->ID : (int) $t;
-        $title     = get_the_title($tid);
-        $state_pid = function_exists('get_field') ? get_field('state', $tid) : null;
-        $state_abbr = '';
-        if ($state_pid) {
-            $sp_id = is_object($state_pid) ? $state_pid->ID : (int) $state_pid;
-            $state_abbr = function_exists('get_field') ? (get_field('abbreviation', $sp_id) ?: '') : '';
-            if (!$state_abbr) {
-                // crude fallback: take first two letters of state title.
-                $state_abbr = strtoupper(substr(get_the_title($sp_id), 0, 2));
-            }
-        }
-        $pills[] = [
-            'label' => $title . ($state_abbr ? ', ' . $state_abbr : ''),
-            'city'  => $title,
-            'state' => $state_abbr,
-        ];
-    }
-} else {
-    $pills = [
-        ['label' => 'Jupiter, FL',     'city' => 'Jupiter',    'state' => 'FL'],
-        ['label' => 'Charleston, SC',  'city' => 'Charleston', 'state' => 'SC'],
-        ['label' => 'Nashville, TN',   'city' => 'Nashville',  'state' => 'TN'],
-        ['label' => 'Asheville, NC',   'city' => 'Asheville',  'state' => 'NC'],
-        ['label' => 'Miami, FL',       'city' => 'Miami',      'state' => 'FL'],
-    ];
-}
+$touch_body = $gf('touch_body', 'Get local updates, market insight, and community connection from The Locals Group.');
+$touch_link = $gf('touch_link', home_url('/contact'));
+
+// Roster: agent CPT, else auto-discovered placeholder headshots.
+$roster = locals_home_roster();
+$pick = function ($i) use ($roster) { return $roster[$i % max(1, count($roster))] ?? null; };
+
+// Backgrounds with theme-asset fallbacks.
+$group_photo = locals_image_url($gf('home_group_photo', null), '', 'locals-hero');
+$action_bg   = locals_image_url($gf('home_action_bg', null), 'state-card-florida.jpg', 'locals-hero');
 ?>
 
-<section class="hero hero--landing" data-hero>
-    <div class="hero__media">
-        <?php if ($hero_video) : ?>
-            <video class="hero__video" autoplay muted loop playsinline poster="<?php echo esc_url($hero_poster); ?>">
-                <source src="<?php echo esc_url($hero_video); ?>" type="video/mp4">
-            </video>
-        <?php elseif ($hero_poster) : ?>
-            <img class="hero__img" src="<?php echo esc_url($hero_poster); ?>" alt="">
-        <?php endif; ?>
-    </div>
-    <div class="hero__content">
-        <h1 class="hero__title" data-hero-title>Learn from<br>a local.</h1>
-    </div>
-    <form class="hero__search hero__search--floating"
-          data-hero-search
-          action="<?php echo esc_url(home_url('/search')); ?>"
-          method="get"
-          role="search">
-        <label class="visually-hidden" for="hero-search-input"><?php esc_html_e('Search properties', 'locals-realty'); ?></label>
-        <input id="hero-search-input" name="q" type="search"
-               placeholder="<?php esc_attr_e('Search by address, town, agent...', 'locals-realty'); ?>">
-        <button type="submit" aria-label="<?php esc_attr_e('Search', 'locals-realty'); ?>">&rarr;</button>
-    </form>
-</section>
-
-<?php
-// Mission scroll-reveal: two-beat curtain that plays before the existing
-// mission grid. Beat 1 is "Home." in solid type on white; beat 2 is
-// "Lifestyle." in white type with mix-blend-difference over a full-bleed
-// southern-town photo. Wired via inline style so the image can move into
-// ACF (mission_reveal_image) without touching JS or CSS.
-$reveal_life_img = function_exists('get_field') ? get_field('mission_reveal_image') : '';
-// High-res Savannah, GA — oak-canopied southern road (Jacob Mathers, 3857x2169).
-$reveal_life_img = is_array($reveal_life_img) && !empty($reveal_life_img['url'])
-    ? $reveal_life_img['url']
-    : ($reveal_life_img ?: 'https://images.unsplash.com/photo-1623184185917-d2e8ec0daa27?w=2400&q=85&auto=format&fit=crop');
-?>
-<section class="mission-reveal" data-mission-reveal aria-hidden="true">
-    <div class="mission-reveal__pin">
-        <div class="mission-reveal__beat mission-reveal__beat--home">
-            <p class="mission-reveal__kicker">The right</p>
-            <h2 class="mission-reveal__big">Home.</h2>
+<!-- ============================ 1. MEET THE LOCALS GROUP ============================ -->
+<section class="tlg tlg-hero" data-reveal>
+    <div class="tlg-hero__inner">
+        <div class="tlg-hero__copy">
+            <h1 class="tlg-display tlg-hero__title">Meet<br>The Locals<br>Group</h1>
+            <p class="tlg-hero__lead"><?php echo esc_html($intro); ?></p>
+            <div class="tlg-hero__cta">
+                <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_find); ?>">Find your home</a>
+                <a class="tlg-btn tlg-btn--ghost" href="<?php echo esc_url(home_url('/about')); ?>">Meet the team</a>
+            </div>
         </div>
-        <div class="mission-reveal__beat mission-reveal__beat--life"
-             style="background-image:url('<?php echo esc_url($reveal_life_img); ?>');">
-            <div class="mission-reveal__beat-veil" aria-hidden="true"></div>
-            <p class="mission-reveal__kicker mission-reveal__kicker--light">The right</p>
-            <h2 class="mission-reveal__big mission-reveal__big--knockout">Lifestyle.</h2>
-        </div>
-        <div class="mission-reveal__caret" aria-hidden="true">scroll</div>
-    </div>
-</section>
-
-<section class="mission container" data-reveal>
-    <div class="mission__main">
-        <h2 class="mission__title">The right home.<br>The right lifestyle.</h2>
-        <p class="mission__copy"><?php echo esc_html($mission); ?></p>
-        <ul class="mission__states">
-            <?php foreach ($states as $s) : ?>
-                <li><?php echo esc_html(get_the_title($s)); ?></li>
-            <?php endforeach; ?>
-            <?php if (empty($states)) : ?>
-                <li>Florida</li><li>North Carolina</li><li>South Carolina</li><li>Tennessee</li>
+        <div class="tlg-hero__photo">
+            <?php if ($group_photo) : ?>
+                <img class="tlg-hero__group" src="<?php echo esc_url($group_photo); ?>" alt="The Locals Group team">
+            <?php else : ?>
+                <div class="tlg-hero__cluster" aria-hidden="true">
+                    <?php for ($i = 0; $i < 5; $i++) : $p = $pick($i); if (!$p) continue; ?>
+                        <figure class="tlg-hero__chip" style="--n:<?php echo $i; ?>;">
+                            <img src="<?php echo esc_url($p['img']); ?>" alt="">
+                        </figure>
+                    <?php endfor; ?>
+                </div>
             <?php endif; ?>
-        </ul>
+        </div>
     </div>
-    <aside class="mission__aside">
+</section>
+
+<!-- ============================ 2. FIND / GET APPROVED / SELL ============================ -->
+<section class="tlg tlg-action" data-reveal>
+    <div class="tlg-action__bg" style="background-image:url('<?php echo esc_url($action_bg); ?>');" aria-hidden="true"></div>
+    <div class="tlg-action__scrim" aria-hidden="true"></div>
+
+    <p class="tlg-action__brand">
+        <span class="tlg-script">The Locals</span>
+        <span class="tlg-action__brand-sub">GROUP &middot; lpt realty</span>
+    </p>
+
+    <?php $buyer = $pick(5); $seller = $pick(6); ?>
+    <?php if ($buyer) : ?>
+        <figure class="tlg-action__agent tlg-action__agent--left"><img src="<?php echo esc_url($buyer['img']); ?>" alt=""></figure>
+    <?php endif; ?>
+    <?php if ($seller) : ?>
+        <figure class="tlg-action__agent tlg-action__agent--right"><img src="<?php echo esc_url($seller['img']); ?>" alt=""></figure>
+    <?php endif; ?>
+
+    <div class="tlg-action__row">
+        <a class="tlg-cta tlg-cta--find" href="<?php echo esc_url($cta_find); ?>">
+            <span class="tlg-cta__small">Find</span>
+            <span class="tlg-cta__big">Homes</span>
+        </a>
+        <a class="tlg-cta tlg-cta--approve" href="<?php echo esc_url($cta_approve); ?>">
+            <span class="tlg-cta__small">Get</span>
+            <span class="tlg-cta__big">Approved</span>
+        </a>
+        <a class="tlg-cta tlg-cta--sell" href="<?php echo esc_url($cta_sell); ?>">
+            <span class="tlg-cta__small">Sell</span>
+            <span class="tlg-cta__big">Homes</span>
+        </a>
+    </div>
+</section>
+
+<!-- ============================ 3. STAY IN TOUCH / LEARN THE AREA ============================ -->
+<section class="tlg tlg-touch" data-reveal>
+    <div class="tlg-touch__inner">
+        <div class="tlg-phone" aria-hidden="true">
+            <div class="tlg-phone__notch"></div>
+            <div class="tlg-phone__screen">
+                <?php
+                $listing = function_exists('locals_lofty_tailored_listing') ? locals_lofty_tailored_listing() : [];
+                $l_img   = $listing['photo'] ?? '';
+                $l_price = isset($listing['price']) ? locals_format_price($listing['price']) : '$90,000';
+                $l_addr  = $listing['address'] ?? '789 Atlantic Ave #621';
+                $l_loc   = trim(implode(', ', array_filter([$listing['city'] ?? 'Daytona Beach', $listing['state'] ?? 'FL'])));
+                $l_photo = $l_img ?: locals_image_url(null, 'florida2.webp');
+                ?>
+                <div class="tlg-phone__photo"<?php echo $l_photo ? ' style="background-image:url(\'' . esc_url($l_photo) . '\');"' : ''; ?>>
+                    <span class="tlg-phone__tag">For Sale</span>
+                </div>
+                <div class="tlg-phone__body">
+                    <p class="tlg-phone__price"><?php echo esc_html($l_price); ?></p>
+                    <p class="tlg-phone__addr"><?php echo esc_html($l_addr); ?></p>
+                    <p class="tlg-phone__loc"><?php echo esc_html($l_loc); ?></p>
+                    <p class="tlg-phone__beds"><strong>1</strong> Bath</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="tlg-touch__copy">
+            <p class="tlg-script tlg-touch__brand">The Locals <span>Group</span></p>
+            <h2 class="tlg-display tlg-touch__title">Stay<br>In<br>Touch</h2>
+            <p class="tlg-touch__pin"><span aria-hidden="true">&#9679;</span> <span class="tlg-script tlg-touch__learn">Learn the area</span></p>
+            <p class="tlg-touch__body"><?php echo esc_html($touch_body); ?></p>
+            <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($touch_link); ?>">Stay in touch</a>
+        </div>
+
+        <div class="tlg-touch__agents" aria-hidden="false">
+            <?php
+            $featured = [$pick(7), $pick(8), $pick(9)];
+            foreach ($featured as $j => $f) : if (!$f) continue;
+                $first = explode(' ', $f['name'])[0];
+                $rest  = trim(substr($f['name'], strlen($first)));
+            ?>
+                <figure class="tlg-touch__agent" style="--n:<?php echo $j; ?>;">
+                    <img src="<?php echo esc_url($f['img']); ?>" alt="<?php echo esc_attr($f['name']); ?>">
+                    <figcaption>
+                        <span class="tlg-script tlg-touch__agent-first"><?php echo esc_html($first); ?></span>
+                        <?php if ($rest) : ?><span class="tlg-touch__agent-last"><?php echo esc_html(strtoupper($rest)); ?></span><?php endif; ?>
+                    </figcaption>
+                </figure>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <ul class="tlg-features">
+        <li><strong>Local Expertise</strong><span>You can trust</span></li>
+        <li><strong>Luxury Service</strong><span>Personal touch</span></li>
+        <li><strong>Community First</strong><span>Always local</span></li>
+    </ul>
+    <p class="tlg-script tlg-tagline">Local Knowledge. Lasting Connections. Exceptional Results.</p>
+</section>
+
+<!-- ============================ 4. OUR LOCALS ============================ -->
+<section class="tlg tlg-locals" data-reveal>
+    <h2 class="tlg-display tlg-locals__title">Our Locals</h2>
+    <ul class="tlg-locals__grid" data-reveal data-reveal-stagger="0.07">
         <?php
-        $tailored      = locals_lofty_tailored_listing();
-        $tailored_img  = $tailored['photo']  ?? '';
-        $tailored_link = $tailored['permalink'] ?? '';
-        $tailored_addr = $tailored['address']    ?? '';
-        $tailored_loc  = trim(implode(', ', array_filter([$tailored['city'] ?? '', $tailored['state'] ?? ''])));
-        $tailored_price = isset($tailored['price']) ? locals_format_price($tailored['price']) : '';
-        $fallback_img  = locals_image_url(null, 'mission-aside.jpg');
-
-        if ($tailored_img || $fallback_img) : ?>
-            <a class="mission__property"
-               href="<?php echo esc_url($tailored_link ?: '#'); ?>"
-               <?php echo $tailored_link ? 'target="_blank" rel="noopener"' : ''; ?>>
-                <img src="<?php echo esc_url($tailored_img ?: $fallback_img); ?>" alt="<?php echo esc_attr($tailored_addr); ?>">
-                <p class="mission__caption">
-                    <span class="mission__caption-prefix">build the</span>
-                    next version of<br>your life.
-                </p>
-                <?php if ($tailored_addr) : ?>
-                    <div class="mission__property-meta">
-                        <span class="mission__property-addr"><?php echo esc_html($tailored_addr); ?></span>
-                        <?php if ($tailored_price) : ?><span class="mission__property-price"><?php echo esc_html($tailored_price); ?></span><?php endif; ?>
-                        <?php if ($tailored_loc)   : ?><span class="mission__property-loc"><?php echo esc_html($tailored_loc); ?></span><?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            </a>
-        <?php endif; ?>
-    </aside>
-</section>
-
-<section class="landing-search container" data-reveal>
-    <form class="landing-search__bar" action="<?php echo esc_url(home_url('/search')); ?>" method="get" role="search">
-        <label class="visually-hidden" for="landing-search">Search properties</label>
-        <input id="landing-search" name="q" type="search" placeholder="Search by address, location, agent...">
-        <button type="submit" aria-label="Search">&rarr;</button>
-    </form>
-</section>
-
-<section class="states container">
-    <h2 class="section-title">By state</h2>
-    <ul class="states__grid" data-reveal data-reveal-stagger="0.09">
-        <?php foreach ($states as $state) :
-            $slug = sanitize_title(get_the_title($state));
-            $img  = locals_thumbnail_url($state, "state-card-{$slug}.jpg", 'locals-town')
-                 ?: locals_thumbnail_url(0, 'state-card-default.jpg', 'locals-town');
+        $grid = array_slice($roster, 0, 6);
+        foreach ($grid as $a) :
+            $first = explode(' ', $a['name'])[0];
+            $rest  = trim(substr($a['name'], strlen($first)));
+            $tag   = $a['url'] && $a['url'] !== '#' ? 'a' : 'div';
         ?>
-            <li class="states__item">
-                <a href="<?php echo esc_url(get_permalink($state)); ?>">
-                    <?php if ($img) : ?>
-                        <img src="<?php echo esc_url($img); ?>"
-                             alt="<?php echo esc_attr(get_the_title($state)); ?>"
-                             style="view-transition-name: state-photo-<?php echo esc_attr($slug); ?>;">
-                    <?php endif; ?>
-                    <span class="states__label"
-                          style="view-transition-name: state-label-<?php echo esc_attr($slug); ?>;"><?php echo esc_html(get_the_title($state)); ?></span>
+            <li class="tlg-local">
+                <<?php echo $tag; ?> class="tlg-local__link"<?php echo $tag === 'a' ? ' href="' . esc_url($a['url']) . '"' : ''; ?>>
+                    <span class="tlg-local__photo"><img src="<?php echo esc_url($a['img']); ?>" alt="<?php echo esc_attr($a['name']); ?>"></span>
+                    <span class="tlg-local__name tlg-display">
+                        <span><?php echo esc_html(strtoupper($first)); ?></span>
+                        <?php if ($rest) : ?><span><?php echo esc_html(strtoupper($rest)); ?></span><?php endif; ?>
+                    </span>
+                </<?php echo $tag; ?>>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+</section>
+
+<!-- ============================ 5. JOIN THE TEAM ============================ -->
+<?php
+$join_cards = [
+    ['eyebrow' => 'Become a Preferred',     'title' => 'Vendor',              'img' => 'florida3.webp', 'url' => $gf('join_vendor_url',    home_url('/join'))],
+    ['eyebrow' => 'Become a Preferred',     'title' => 'Lender',              'img' => 'florida4.webp', 'url' => $gf('join_lender_url',    home_url('/join'))],
+    ['eyebrow' => 'Become Our Preferred',   'title' => 'Business Affiliate',  'img' => 'florida5.webp', 'url' => $gf('join_affiliate_url', home_url('/join'))],
+    ['eyebrow' => 'Partner With',           'title' => 'The Locals Group',    'img' => 'florida6.webp', 'url' => $gf('join_partner_url',   home_url('/join'))],
+];
+?>
+<section class="tlg tlg-join" data-reveal>
+    <h2 class="tlg-display tlg-join__title">Join The Team</h2>
+    <ul class="tlg-join__grid" data-reveal data-reveal-stagger="0.08">
+        <?php foreach ($join_cards as $c) : $img = locals_image_url(null, $c['img'], 'locals-card'); ?>
+            <li class="tlg-join__card">
+                <a href="<?php echo esc_url($c['url']); ?>">
+                    <span class="tlg-join__media"<?php echo $img ? ' style="background-image:url(\'' . esc_url($img) . '\');"' : ''; ?>></span>
+                    <span class="tlg-join__label">
+                        <span class="tlg-join__eyebrow"><?php echo esc_html($c['eyebrow']); ?></span>
+                        <span class="tlg-join__name tlg-display"><?php echo esc_html(strtoupper($c['title'])); ?></span>
+                    </span>
                 </a>
             </li>
         <?php endforeach; ?>
     </ul>
-</section>
-
-<?php
-// Probe each pill's filter and drop ones that return no active listings.
-// locals_lofty_listings() caches each filter in a 15-min transient, and the
-// initial render below reuses the same filter shape so it's a cache hit.
-$pills = array_values(array_filter($pills, function ($p) {
-    $filter = ['city' => $p['city'], 'state' => $p['state'], 'scope' => 'office', 'limit' => 9];
-    return !empty(locals_lofty_listings($filter));
-}));
-?>
-<?php if ($pills) : ?>
-<section class="highlights container" data-reveal>
-    <h2 class="section-title">Highlighted properties</h2>
-    <ul class="highlights__pills" data-listings-filters>
-        <?php foreach ($pills as $i => $p) :
-            $filter = ['city' => $p['city'], 'state' => $p['state'], 'scope' => 'office', 'limit' => 9];
-        ?>
-            <li>
-                <button type="button"
-                    class="highlights__pill <?php echo $i === 0 ? 'is-active' : ''; ?>"
-                    data-filter="<?php echo esc_attr(wp_json_encode($filter)); ?>">
-                    <?php echo esc_html($p['label']); ?>
-                </button>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-    <div class="highlights__carousel" data-carousel>
-        <button type="button" class="highlights__nav highlights__nav--prev" data-carousel-prev
-                aria-label="<?php esc_attr_e('Previous properties', 'locals-realty'); ?>" hidden>
-            <span aria-hidden="true">&larr;</span>
-        </button>
-        <div class="highlights__cards" data-listings-grid aria-live="polite" aria-busy="false">
-            <?php
-            $initial = ['city' => $pills[0]['city'], 'state' => $pills[0]['state'], 'scope' => 'office', 'limit' => 9];
-            locals_render_listings(
-                $initial,
-                __('Featured listings will populate here once Lofty returns matching active listings.', 'locals-realty')
-            );
-            ?>
-        </div>
-        <button type="button" class="highlights__nav highlights__nav--next" data-carousel-next
-                aria-label="<?php esc_attr_e('Next properties', 'locals-realty'); ?>" hidden>
-            <span aria-hidden="true">&rarr;</span>
-        </button>
-    </div>
-    <div class="highlights__view-all-row">
-        <a class="highlights__view-all" href="<?php echo esc_url(home_url('/search')); ?>">
-            <?php esc_html_e('View all properties', 'locals-realty'); ?> &rarr;
-        </a>
-    </div>
-</section>
-<?php endif; ?>
-
-<?php
-$lifestyle_eyebrow = function_exists('get_field') ? get_field('lifestyle_eyebrow') : '';
-$lifestyle_title   = function_exists('get_field') ? get_field('lifestyle_title')   : '';
-$lifestyle_body    = function_exists('get_field') ? get_field('lifestyle_body')    : '';
-$lifestyle_image   = function_exists('get_field') ? get_field('lifestyle_image')   : null;
-$lifestyle_eyebrow = $lifestyle_eyebrow ?: __('Lifestyle realty.', 'locals-realty');
-$lifestyle_title   = $lifestyle_title   ?: __('Let\'s build your new life.', 'locals-realty');
-$lifestyle_body    = $lifestyle_body    ?: __('A move is more than a transaction — it\'s a chance to step into a different rhythm. We listen for what you\'re actually after (slower mornings, water access, a school, room to breathe) and pair you with the town, neighborhood, and home that fits the life you\'re reaching toward.', 'locals-realty');
-$lifestyle_img_url = locals_image_url($lifestyle_image, 'lifestyle.jpg', 'locals-card');
-// Fall back to a cinematic small-town dusk shot until an ACF image is set.
-// High-res Charleston, SC street (Alexander Wark Feeney, 5184x3456).
-$lifestyle_bg_url  = $lifestyle_img_url
-    ?: 'https://images.unsplash.com/photo-1642534683740-2334ba785e3e?w=2400&q=85&auto=format&fit=crop';
-?>
-<section class="lifestyle-stack" data-lifestyle-stack>
-    <div class="lifestyle-stack__media" aria-hidden="true">
-        <img src="<?php echo esc_url($lifestyle_bg_url); ?>" alt="" loading="lazy">
-    </div>
-    <h2 class="lifestyle-stack__title" aria-label="<?php echo esc_attr($lifestyle_title); ?>">
-        <span class="lifestyle-stack__line" style="--i:0;--dir:-1;">Let's</span>
-        <span class="lifestyle-stack__line" style="--i:1;--dir:1;">build</span>
-        <span class="lifestyle-stack__line" style="--i:2;--dir:-1;">your</span>
-        <span class="lifestyle-stack__line" style="--i:3;--dir:1;">new</span>
-        <span class="lifestyle-stack__line" style="--i:4;--dir:-1;">life.</span>
-    </h2>
-    <div class="lifestyle-stack__cta">
-        <p class="lifestyle-stack__eyebrow"><?php echo esc_html($lifestyle_eyebrow); ?></p>
-        <p class="lifestyle-stack__copy"><?php echo esc_html($lifestyle_body); ?></p>
-        <a class="btn lifestyle-stack__btn" href="<?php echo esc_url(home_url('/about')); ?>">
-            <?php esc_html_e('Start the conversation', 'locals-realty'); ?> &rarr;
-        </a>
-    </div>
-</section>
-
-<section class="container split" data-reveal>
-    <?php
-    $team_page = get_page_by_path('about');
-    $team_url  = $team_page ? locals_thumbnail_url($team_page, 'team.jpg', 'locals-card') : locals_image_url(null, 'team.jpg');
-    ?>
-    <div class="split__media">
-        <?php if ($team_url) : ?><img src="<?php echo esc_url($team_url); ?>" alt=""><?php endif; ?>
-    </div>
-    <div class="split__body">
-        <h2>Meet the Team</h2>
-        <p><?php echo esc_html($mission); ?></p>
-        <a class="btn btn--ghost" href="<?php echo esc_url(home_url('/about')); ?>"><?php esc_html_e('Learn More', 'locals-realty'); ?></a>
-    </div>
-</section>
-
-<section class="container split split--reverse" data-reveal>
-    <div class="split__media">
-        <?php $join_url = locals_image_url(null, 'join.jpg'); ?>
-        <?php if ($join_url) : ?><img src="<?php echo esc_url($join_url); ?>" alt=""><?php endif; ?>
-    </div>
-    <div class="split__body">
-        <h2>Join Today &mdash; <em>become a local.</em></h2>
-        <p><?php echo esc_html($mission); ?></p>
-        <a class="btn btn--ghost" href="<?php echo esc_url(home_url('/join')); ?>"><?php esc_html_e('Learn More', 'locals-realty'); ?></a>
-    </div>
+    <p class="tlg-script tlg-tagline">Stronger Partnerships. Greater Impact. Lasting Success.</p>
 </section>
 
 <?php get_footer();
