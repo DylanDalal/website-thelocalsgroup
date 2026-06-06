@@ -397,18 +397,6 @@
       pills.forEach((li) => {
         li.classList.toggle('is-region-active', li.getAttribute('data-region') === slug);
       });
-      // Kick the comet's SMIL motion so it sweeps the path from the start
-      // every time the region is (re-)activated. begin="indefinite" in the
-      // SVG keeps it parked until we call beginElement().
-      if (!slug) return;
-      const motions = root.querySelectorAll(
-        '.lifestyles__map-region[data-region="' + slug + '"] animateMotion'
-      );
-      motions.forEach((m) => {
-        if (typeof m.beginElement === 'function') {
-          try { m.beginElement(); } catch (_) { /* ignore */ }
-        }
-      });
     }
 
     // Default to the first pill so the map isn't blank when the section reveals.
