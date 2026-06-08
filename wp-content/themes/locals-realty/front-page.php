@@ -40,28 +40,77 @@ $action_bg   = locals_image_url($gf('home_action_bg', null), 'state-card-florida
 ?>
 
 <!-- ============================ 1. MEET THE LOCALS GROUP ============================ -->
+<?php
+// Editorial hero: face-normalized cutouts arranged in a pyramid cluster, a
+// glowing US map of our markets (FL/NC/SC/TN), and a Lofty-bound listing card.
+$cluster   = locals_home_cluster(5);
+$pos       = ['p1', 'p2', 'p3', 'p4', 'p5'];
+
+$hero_listing = function_exists('locals_lofty_tailored_listing') ? locals_lofty_tailored_listing() : [];
+$hl_photo  = $hero_listing['photo'] ?? locals_image_url(null, 'state-card-florida.jpg');
+$hl_price  = isset($hero_listing['price']) ? locals_format_price($hero_listing['price']) : '$1,450,000';
+$hl_addr   = $hero_listing['address'] ?? '312 Seaside Ave';
+$hl_loc    = trim(implode(', ', array_filter([$hero_listing['city'] ?? 'Key West', $hero_listing['state'] ?? 'FL'])));
+$hl_beds   = $hero_listing['beds'] ?? '4';
+$hl_baths  = $hero_listing['baths'] ?? '3';
+$hl_sqft   = isset($hero_listing['sqft']) ? number_format((float) $hero_listing['sqft']) : '2,840';
+$hl_url    = $hero_listing['url'] ?? $cta_find;
+?>
 <section class="tlg tlg-hero" data-reveal>
+    <div class="tlg-hero__atmos" aria-hidden="true"></div>
+    <?php get_template_part('template-parts/home-usmap'); ?>
+    <div class="tlg-hero__grain" aria-hidden="true"></div>
+
     <div class="tlg-hero__inner">
         <div class="tlg-hero__copy">
-            <h1 class="tlg-display tlg-hero__title">Meet<br>The Locals<br>Group</h1>
+            <h1 class="tlg-display tlg-hero__title">Meet The<br>Locals Group</h1>
+            <hr class="tlg-hero__divider">
             <p class="tlg-hero__lead"><?php echo esc_html($intro); ?></p>
             <div class="tlg-hero__cta">
-                <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_find); ?>">Find your home</a>
-                <a class="tlg-btn tlg-btn--ghost" href="<?php echo esc_url(home_url('/about')); ?>">Meet the team</a>
+                <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_find); ?>">Find Your Home <span aria-hidden="true">&rarr;</span></a>
+                <a class="tlg-btn tlg-btn--ghost" href="<?php echo esc_url(home_url('/about')); ?>">Meet the Team</a>
             </div>
         </div>
-        <div class="tlg-hero__photo">
-            <?php if ($group_photo) : ?>
-                <img class="tlg-hero__group" src="<?php echo esc_url($group_photo); ?>" alt="The Locals Group team">
-            <?php else : ?>
-                <div class="tlg-hero__cluster" aria-hidden="true">
-                    <?php for ($i = 0; $i < 5; $i++) : $p = $pick($i); if (!$p) continue; ?>
-                        <figure class="tlg-hero__chip" style="--n:<?php echo $i; ?>;">
-                            <img src="<?php echo esc_url($p['img']); ?>" alt="">
-                        </figure>
-                    <?php endfor; ?>
-                </div>
-            <?php endif; ?>
+
+        <div class="tlg-hero__cluster">
+            <?php foreach ($cluster as $i => $p) : if (empty($pos[$i])) break; ?>
+                <figure class="<?php echo esc_attr($pos[$i]); ?>">
+                    <?php if ($p['url'] && $p['url'] !== '#') : ?><a href="<?php echo esc_url($p['url']); ?>"><?php endif; ?>
+                    <img src="<?php echo esc_url($p['img']); ?>" alt="<?php echo esc_attr($p['name']); ?>">
+                    <?php if ($p['url'] && $p['url'] !== '#') : ?></a><?php endif; ?>
+                </figure>
+            <?php endforeach; ?>
+
+            <!-- clutter: gold seal + handwritten note -->
+            <svg class="tlg-hero__seal" viewBox="0 0 120 120" aria-hidden="true">
+                <defs><path id="tlg-sealcircle" d="M60,60 m-43,0 a43,43 0 1,1 86,0 a43,43 0 1,1 -86,0"/></defs>
+                <circle cx="60" cy="60" r="55" fill="rgba(10,33,31,.85)" stroke="#c8a24a" stroke-width="1"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="#c8a24a" stroke-width="2"/>
+                <text font-size="9.5" letter-spacing="2.5"><textPath href="#tlg-sealcircle" startOffset="0">LOCALLY TRUSTED · SOUTHEAST USA · </textPath></text>
+                <text x="60" y="70" text-anchor="middle" font-size="30" fill="#ecd28b">&#9733;</text>
+            </svg>
+            <div class="tlg-hero__note" aria-hidden="true">your local team
+                <svg viewBox="0 0 80 60" fill="none" stroke="#ecd28b" stroke-width="3" stroke-linecap="round"><path d="M4 8 C30 6 54 18 70 44"/><path d="M70 44 L58 40 M70 44 L66 30"/></svg>
+            </div>
+
+            <!-- listing card: bound to locals_lofty_tailored_listing() -->
+            <a class="tlg-hero__listing" href="<?php echo esc_url($hl_url); ?>" aria-label="View featured listing">
+                <span class="tlg-hero__listing-media"<?php echo $hl_photo ? ' style="background-image:url(\'' . esc_url($hl_photo) . '\');"' : ''; ?>>
+                    <span class="tlg-hero__listing-status">Just Listed</span>
+                    <span class="tlg-hero__listing-fav" aria-hidden="true">&#9829;</span>
+                </span>
+                <span class="tlg-hero__listing-body">
+                    <span class="tlg-hero__listing-price"><?php echo esc_html($hl_price); ?></span>
+                    <span class="tlg-hero__listing-addr"><?php echo esc_html($hl_addr); ?></span>
+                    <span class="tlg-hero__listing-loc"><?php echo esc_html($hl_loc); ?></span>
+                    <span class="tlg-hero__listing-specs">
+                        <span><b><?php echo esc_html($hl_beds); ?></b> Beds</span>
+                        <span><b><?php echo esc_html($hl_baths); ?></b> Baths</span>
+                        <span><b><?php echo esc_html($hl_sqft); ?></b> Sq Ft</span>
+                    </span>
+                    <span class="tlg-hero__listing-cta"><span>View Listing</span><span aria-hidden="true">&rarr;</span></span>
+                </span>
+            </a>
         </div>
     </div>
 </section>

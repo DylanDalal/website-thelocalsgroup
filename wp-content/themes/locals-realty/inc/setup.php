@@ -134,6 +134,46 @@ function locals_home_roster($limit = 0) {
 }
 
 /**
+ * Face-normalized agent cutouts used by the editorial hero cluster.
+ *
+ * Pulls the uniform .webp cutouts from assets/images/team/normalized/ (faces
+ * pre-aligned to the same size) and pairs each with its roster entry so the
+ * cluster can link through to the agent's page. Names come from the filename
+ * (e.g. "chris_igoe.webp" -> "Chris Igoe"); the URL is the matching agent
+ * permalink when one exists, otherwise '#'.
+ *
+ * @param int $limit Max cutouts to return (0 = all, ordered by filename).
+ * @return array<int, array{name:string, img:string, url:string}>
+ */
+function locals_home_cluster($limit = 0) {
+    $dir = LOCALS_REALTY_DIR . '/assets/images/team/normalized';
+    $files = glob($dir . '/*.{webp,jpg,jpeg,png}', GLOB_BRACE) ?: [];
+    sort($files);
+
+    // Index roster by normalized name so cutouts can resolve real permalinks.
+    $by_name = [];
+    foreach (locals_home_roster() as $member) {
+        $by_name[strtolower($member['name'])] = $member['url'];
+    }
+
+    $out = [];
+    foreach ($files as $f) {
+        $base = pathinfo($f, PATHINFO_FILENAME);
+        $name = ucwords(str_replace(['_', '-'], ' ', $base));
+        $out[] = [
+            'name' => $name,
+            'img'  => LOCALS_REALTY_URI . '/assets/images/team/normalized/' . rawurlencode(basename($f)),
+            'url'  => $by_name[strtolower($name)] ?? '#',
+        ];
+    }
+
+    if ($limit > 0) {
+        $out = array_slice($out, 0, $limit);
+    }
+    return $out;
+}
+
+/**
  * Per-state default copy used by single-state.php when the corresponding ACF
  * field is empty. Keyed by state slug (post slug of the state CPT).
  */

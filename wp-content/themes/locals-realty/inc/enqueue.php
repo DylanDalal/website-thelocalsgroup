@@ -42,7 +42,7 @@ add_action('wp_enqueue_scripts', function () {
     if (is_front_page()) {
         wp_enqueue_style(
             'locals-realty-home-fonts',
-            'https://fonts.googleapis.com/css2?family=Bevan:ital@0;1&family=Alfa+Slab+One&family=Sail&display=swap',
+            'https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Sail&family=Caveat:wght@500;600;700&display=swap',
             [],
             null
         );
