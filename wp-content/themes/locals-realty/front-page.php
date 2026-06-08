@@ -37,7 +37,31 @@ $pick = function ($i) use ($roster) { return $roster[$i % max(1, count($roster))
 // Backgrounds with theme-asset fallbacks.
 $group_photo = locals_image_url($gf('home_group_photo', null), '', 'locals-hero');
 $action_bg   = locals_image_url($gf('home_action_bg', null), 'state-card-florida.jpg', 'locals-hero');
+
+// Video opener: ACF URL, else the bundled brand reel. Poster fallback for
+// reduced-motion / slow connections / formats the browser can't play.
+$hero_video    = $gf('hero_video_url', LOCALS_REALTY_URI . '/assets/images/default-hero-video.mp4');
+$hero_poster   = locals_image_url($gf('hero_fallback', null), 'state-card-florida.jpg', 'locals-hero');
+$hero_tagline  = $gf('hero_tagline', 'Local Knowledge. Lasting Connections. Exceptional Results.');
 ?>
+
+<!-- ============================ 0. VIDEO OPENER ============================ -->
+<section class="tlg tlg-opener" aria-label="The Locals Group">
+    <div class="tlg-opener__media" aria-hidden="true">
+        <video class="tlg-opener__video" autoplay muted loop playsinline preload="metadata"
+               <?php echo $hero_poster ? 'poster="' . esc_url($hero_poster) . '"' : ''; ?>>
+            <source src="<?php echo esc_url($hero_video); ?>" type="video/mp4">
+        </video>
+        <div class="tlg-opener__scrim"></div>
+    </div>
+    <div class="tlg-opener__content">
+        <p class="tlg-script tlg-opener__brand">The Locals <span>Group</span></p>
+        <p class="tlg-opener__tagline"><?php echo esc_html($hero_tagline); ?></p>
+    </div>
+    <a class="tlg-opener__cue" href="#meet" aria-label="Scroll to meet the team">
+        <span></span>
+    </a>
+</section>
 
 <!-- ============================ 1. MEET THE LOCALS GROUP ============================ -->
 <?php
@@ -56,7 +80,7 @@ $hl_baths  = $hero_listing['baths'] ?? '3';
 $hl_sqft   = isset($hero_listing['sqft']) ? number_format((float) $hero_listing['sqft']) : '2,840';
 $hl_url    = $hero_listing['url'] ?? $cta_find;
 ?>
-<section class="tlg tlg-hero" data-reveal>
+<section id="meet" class="tlg tlg-hero" data-reveal>
     <div class="tlg-hero__atmos" aria-hidden="true"></div>
     <?php get_template_part('template-parts/home-usmap'); ?>
     <div class="tlg-hero__grain" aria-hidden="true"></div>
@@ -70,6 +94,21 @@ $hl_url    = $hero_listing['url'] ?? $cta_find;
                 <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_find); ?>">Find Your Home <span aria-hidden="true">&rarr;</span></a>
                 <a class="tlg-btn tlg-btn--ghost" href="<?php echo esc_url(home_url('/about')); ?>">Meet the Team</a>
             </div>
+
+            <?php
+            // Hovering a market name lights up its state on the map (see home.js).
+            $markets = [
+                'FL' => ['Florida',        'florida'],
+                'NC' => ['North Carolina', 'north-carolina'],
+                'SC' => ['South Carolina', 'south-carolina'],
+                'TN' => ['Tennessee',      'tennessee'],
+            ];
+            ?>
+            <nav class="tlg-hero__states" aria-label="Our markets">
+                <?php foreach ($markets as $code => $m) : ?>
+                    <a class="tlg-hero__state" href="<?php echo esc_url(home_url('/' . $m[1])); ?>" data-state="<?php echo esc_attr($code); ?>"><?php echo esc_html($m[0]); ?></a>
+                <?php endforeach; ?>
+            </nav>
         </div>
 
         <div class="tlg-hero__cluster">
@@ -92,27 +131,27 @@ $hl_url    = $hero_listing['url'] ?? $cta_find;
             <div class="tlg-hero__note" aria-hidden="true">your local team
                 <svg viewBox="0 0 80 60" fill="none" stroke="#ecd28b" stroke-width="3" stroke-linecap="round"><path d="M4 8 C30 6 54 18 70 44"/><path d="M70 44 L58 40 M70 44 L66 30"/></svg>
             </div>
-
-            <!-- listing card: bound to locals_lofty_tailored_listing() -->
-            <a class="tlg-hero__listing" href="<?php echo esc_url($hl_url); ?>" aria-label="View featured listing">
-                <span class="tlg-hero__listing-media"<?php echo $hl_photo ? ' style="background-image:url(\'' . esc_url($hl_photo) . '\');"' : ''; ?>>
-                    <span class="tlg-hero__listing-status">Just Listed</span>
-                    <span class="tlg-hero__listing-fav" aria-hidden="true">&#9829;</span>
-                </span>
-                <span class="tlg-hero__listing-body">
-                    <span class="tlg-hero__listing-price"><?php echo esc_html($hl_price); ?></span>
-                    <span class="tlg-hero__listing-addr"><?php echo esc_html($hl_addr); ?></span>
-                    <span class="tlg-hero__listing-loc"><?php echo esc_html($hl_loc); ?></span>
-                    <span class="tlg-hero__listing-specs">
-                        <span><b><?php echo esc_html($hl_beds); ?></b> Beds</span>
-                        <span><b><?php echo esc_html($hl_baths); ?></b> Baths</span>
-                        <span><b><?php echo esc_html($hl_sqft); ?></b> Sq Ft</span>
-                    </span>
-                    <span class="tlg-hero__listing-cta"><span>View Listing</span><span aria-hidden="true">&rarr;</span></span>
-                </span>
-            </a>
         </div>
     </div>
+
+    <!-- featured listing — bound to locals_lofty_tailored_listing() -->
+    <a class="tlg-hero__listing" href="<?php echo esc_url($hl_url); ?>" aria-label="View featured listing">
+        <span class="tlg-hero__listing-media"<?php echo $hl_photo ? ' style="background-image:url(\'' . esc_url($hl_photo) . '\');"' : ''; ?>>
+            <span class="tlg-hero__listing-status">Just Listed</span>
+            <span class="tlg-hero__listing-fav" aria-hidden="true">&#9829;</span>
+        </span>
+        <span class="tlg-hero__listing-body">
+            <span class="tlg-hero__listing-price"><?php echo esc_html($hl_price); ?></span>
+            <span class="tlg-hero__listing-addr"><?php echo esc_html($hl_addr); ?></span>
+            <span class="tlg-hero__listing-loc"><?php echo esc_html($hl_loc); ?></span>
+            <span class="tlg-hero__listing-specs">
+                <span><b><?php echo esc_html($hl_beds); ?></b> Beds</span>
+                <span><b><?php echo esc_html($hl_baths); ?></b> Baths</span>
+                <span><b><?php echo esc_html($hl_sqft); ?></b> Sq Ft</span>
+            </span>
+            <span class="tlg-hero__listing-cta"><span>View Listing</span><span aria-hidden="true">&rarr;</span></span>
+        </span>
+    </a>
 </section>
 
 <!-- ============================ 2. FIND / GET APPROVED / SELL ============================ -->

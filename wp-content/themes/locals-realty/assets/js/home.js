@@ -60,9 +60,31 @@
     update();
   }
 
+  // ---- Hero market names highlight their state on the map ----
+  // Hovering/focusing a "[data-state]" name toggles .is-active on the matching
+  // SVG path (#FL/#NC/#SC/#TN) so it lights up beyond its idle glow.
+  function bootStateHighlight() {
+    var map = document.querySelector('.tlg-hero__usmap');
+    var names = document.querySelectorAll('.tlg-hero__state[data-state]');
+    if (!map || !names.length) return;
+
+    names.forEach(function (name) {
+      var code = name.getAttribute('data-state');
+      var shape = map.querySelector('#' + code);
+      if (!shape) return;
+      var on = function () { shape.classList.add('is-active'); };
+      var off = function () { shape.classList.remove('is-active'); };
+      name.addEventListener('mouseenter', on);
+      name.addEventListener('mouseleave', off);
+      name.addEventListener('focus', on);
+      name.addEventListener('blur', off);
+    });
+  }
+
   function boot() {
     bootHeaderSearch();
     bootScrolledHeader();
+    bootStateHighlight();
   }
 
   if (document.readyState === 'loading') {
