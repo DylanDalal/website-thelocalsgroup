@@ -113,7 +113,7 @@ $hl_url    = $hero_listing['url'] ?? $cta_find;
 
         <div class="tlg-hero__cluster">
             <?php foreach ($cluster as $i => $p) : if (empty($pos[$i])) break; ?>
-                <figure class="<?php echo esc_attr($pos[$i]); ?>">
+                <figure class="<?php echo esc_attr($pos[$i]); ?>" style="--scale:<?php echo esc_attr($p['scale'] ?? 1); ?>;">
                     <?php if ($p['url'] && $p['url'] !== '#') : ?><a href="<?php echo esc_url($p['url']); ?>"><?php endif; ?>
                     <img src="<?php echo esc_url($p['img']); ?>" alt="<?php echo esc_attr($p['name']); ?>">
                     <?php if ($p['url'] && $p['url'] !== '#') : ?></a><?php endif; ?>

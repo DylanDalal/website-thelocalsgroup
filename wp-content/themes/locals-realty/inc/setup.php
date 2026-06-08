@@ -156,14 +156,27 @@ function locals_home_cluster($limit = 0) {
         $by_name[strtolower($member['name'])] = $member['url'];
     }
 
+    // Per-cutout zoom correction: these "normalized" crops still frame each
+    // subject at a slightly different scale, so equal display width gives
+    // unequal heads. The multiplier evens out apparent head size (1 = base).
+    $head_scale = [
+        'chris_igoe'     => 1.06,
+        'kelly_jones'    => 0.80,
+        'glen_asher'     => 1.34,
+        'rachel_garcia'  => 0.90,
+        'william_dailey' => 1.14,
+    ];
+
     $out = [];
     foreach ($files as $f) {
         $base = pathinfo($f, PATHINFO_FILENAME);
         $name = ucwords(str_replace(['_', '-'], ' ', $base));
         $out[] = [
-            'name' => $name,
-            'img'  => LOCALS_REALTY_URI . '/assets/images/team/normalized/' . rawurlencode(basename($f)),
-            'url'  => $by_name[strtolower($name)] ?? '#',
+            'name'  => $name,
+            'slug'  => $base,
+            'scale' => $head_scale[$base] ?? 1.0,
+            'img'   => LOCALS_REALTY_URI . '/assets/images/team/normalized/' . rawurlencode(basename($f)),
+            'url'   => $by_name[strtolower($name)] ?? '#',
         ];
     }
 
