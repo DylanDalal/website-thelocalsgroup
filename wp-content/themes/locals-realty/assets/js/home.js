@@ -81,10 +81,39 @@
     });
   }
 
+  // ---- Map parallax ----
+  // Drift the US-map watermark slightly slower than the page as the saga
+  // scrolls, for a touch of depth. We only set a CSS variable (--map-shift); the
+  // map's own translateY(-50%) centring is preserved via calc() in the CSS.
+  // Skipped when reduced motion is requested.
+  function bootMapParallax() {
+    var section = document.querySelector('.tlg-saga');
+    var map = section && section.querySelector('.tlg-hero__usmap');
+    if (!map) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var ticking = false;
+    function update() {
+      ticking = false;
+      // -rect.top grows as the section scrolls up past the viewport top; cap the
+      // drift so it stays subtle.
+      var top = section.getBoundingClientRect().top;
+      var shift = Math.min(Math.max(-top * 0.1, 0), window.innerHeight * 0.18);
+      map.style.setProperty('--map-shift', shift.toFixed(1) + 'px');
+    }
+    function onScroll() {
+      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    update();
+  }
+
   function boot() {
     bootHeaderSearch();
     bootScrolledHeader();
     bootStateHighlight();
+    bootMapParallax();
   }
 
   if (document.readyState === 'loading') {

@@ -134,21 +134,48 @@ function locals_home_roster($limit = 0) {
 }
 
 /**
- * Face-normalized agent cutouts used by the editorial hero cluster.
+ * Agent cutouts used by the editorial hero cluster.
  *
- * Pulls the uniform .webp cutouts from assets/images/team/normalized/ (faces
- * pre-aligned to the same size) and pairs each with its roster entry so the
- * cluster can link through to the agent's page. Names come from the filename
- * (e.g. "chris_igoe.webp" -> "Chris Igoe"); the URL is the matching agent
- * permalink when one exists, otherwise '#'.
+ * Pulls the full-resolution .webp cutouts straight from assets/images/team/
+ * (the low-res "normalized" crops are no longer used) and pairs each with its
+ * roster entry so the cluster can link through to the agent's page. Names come
+ * from the filename (e.g. "chris_igoe.webp" -> "Chris Igoe"); the URL is the
+ * matching agent permalink when one exists, otherwise '#'.
  *
  * @param int $limit Max cutouts to return (0 = all, ordered by filename).
- * @return array<int, array{name:string, img:string, url:string}>
+ * @return array<int, array{name:string, slug:string, img:string, url:string}>
  */
 function locals_home_cluster($limit = 0) {
-    $dir = LOCALS_REALTY_DIR . '/assets/images/team/normalized';
+    $dir = LOCALS_REALTY_DIR . '/assets/images/team';
+
+    // Curated lineup (left -> right) so positions stay fixed regardless of the
+    // alphabetical filename order. Any slugs not listed here are appended in
+    // filename order, so the hero still fills if the list is short.
+    $lineup = [
+        'alessandra_colon',
+        'benny_salas',
+        'chris_igoe',
+        'jessica_julian',
+        'gustavo_cruz',
+    ];
+
+    // Non-recursive glob — deliberately skips the old team/normalized/ subdir.
     $files = glob($dir . '/*.{webp,jpg,jpeg,png}', GLOB_BRACE) ?: [];
     sort($files);
+
+    // Map slug -> file path, then order by the curated lineup first.
+    $by_slug = [];
+    foreach ($files as $f) {
+        $by_slug[pathinfo($f, PATHINFO_FILENAME)] = $f;
+    }
+    $ordered = [];
+    foreach ($lineup as $slug) {
+        if (isset($by_slug[$slug])) {
+            $ordered[] = $by_slug[$slug];
+            unset($by_slug[$slug]);
+        }
+    }
+    $ordered = array_merge($ordered, array_values($by_slug));
 
     // Index roster by normalized name so cutouts can resolve real permalinks.
     $by_name = [];
@@ -156,26 +183,14 @@ function locals_home_cluster($limit = 0) {
         $by_name[strtolower($member['name'])] = $member['url'];
     }
 
-    // Per-cutout zoom correction: these "normalized" crops still frame each
-    // subject at a slightly different scale, so equal display width gives
-    // unequal heads. The multiplier evens out apparent head size (1 = base).
-    $head_scale = [
-        'chris_igoe'     => 1.06,
-        'kelly_jones'    => 0.80,
-        'glen_asher'     => 1.34,
-        'rachel_garcia'  => 0.90,
-        'william_dailey' => 1.14,
-    ];
-
     $out = [];
-    foreach ($files as $f) {
+    foreach ($ordered as $f) {
         $base = pathinfo($f, PATHINFO_FILENAME);
         $name = ucwords(str_replace(['_', '-'], ' ', $base));
         $out[] = [
             'name'  => $name,
             'slug'  => $base,
-            'scale' => $head_scale[$base] ?? 1.0,
-            'img'   => LOCALS_REALTY_URI . '/assets/images/team/normalized/' . rawurlencode(basename($f)),
+            'img'   => LOCALS_REALTY_URI . '/assets/images/team/' . rawurlencode(basename($f)),
             'url'   => $by_name[strtolower($name)] ?? '#',
         ];
     }

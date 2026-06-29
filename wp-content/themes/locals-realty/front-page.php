@@ -63,128 +63,102 @@ $hero_tagline  = $gf('hero_tagline', 'Local Knowledge. Lasting Connections. Exce
     </a>
 </section>
 
-<!-- ============================ 1. MEET THE LOCALS GROUP ============================ -->
+<!-- ====== 1 + 2. MEET THE LOCALS GROUP  →  GET APPROVED (one blended section) ======
+   A single tall section with one continuous backdrop (atmosphere + US map +
+   grain) shared by both phases, so there is no hard seam between "Meet The
+   Locals Group" and "Get Approved". The two phases stack and scroll normally
+   with the page. -->
 <?php
-// Editorial hero: face-normalized cutouts arranged in a pyramid cluster, a
-// glowing US map of our markets (FL/NC/SC/TN), and a Lofty-bound listing card.
-$cluster   = locals_home_cluster(5);
-$pos       = ['p1', 'p2', 'p3', 'p4', 'p5'];
-
-$hero_listing = function_exists('locals_lofty_tailored_listing') ? locals_lofty_tailored_listing() : [];
-$hl_photo  = $hero_listing['photo'] ?? locals_image_url(null, 'state-card-florida.jpg');
-$hl_price  = isset($hero_listing['price']) ? locals_format_price($hero_listing['price']) : '$1,450,000';
-$hl_addr   = $hero_listing['address'] ?? '312 Seaside Ave';
-$hl_loc    = trim(implode(', ', array_filter([$hero_listing['city'] ?? 'Key West', $hero_listing['state'] ?? 'FL'])));
-$hl_beds   = $hero_listing['beds'] ?? '4';
-$hl_baths  = $hero_listing['baths'] ?? '3';
-$hl_sqft   = isset($hero_listing['sqft']) ? number_format((float) $hero_listing['sqft']) : '2,840';
-$hl_url    = $hero_listing['url'] ?? $cta_find;
+// Editorial hero: an even row of equal-size agent cutouts over a glowing US
+// map of our markets (FL/NC/SC/TN).
+$cluster = locals_home_cluster(5);
+$pos     = ['p1', 'p2', 'p3', 'p4', 'p5'];
+$img_dir = LOCALS_REALTY_URI . '/assets/images';
+$markets = [
+    'FL' => ['Florida',        'florida'],
+    'NC' => ['North Carolina', 'north-carolina'],
+    'SC' => ['South Carolina', 'south-carolina'],
+    'TN' => ['Tennessee',      'tennessee'],
+];
+$buyer = $pick(5);
+$seller = $pick(6);
 ?>
-<section id="meet" class="tlg tlg-hero" data-reveal>
-    <div class="tlg-hero__atmos" aria-hidden="true"></div>
-    <?php get_template_part('template-parts/home-usmap'); ?>
-    <div class="tlg-hero__grain" aria-hidden="true"></div>
+<section id="meet" class="tlg tlg-saga">
+    <div class="tlg-saga__pin">
 
-    <div class="tlg-hero__inner">
-        <div class="tlg-hero__copy">
-            <h1 class="tlg-display tlg-hero__title">Meet The<br>Locals Group</h1>
-            <hr class="tlg-hero__divider">
-            <p class="tlg-hero__lead"><?php echo esc_html($intro); ?></p>
-            <div class="tlg-hero__cta">
-                <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_find); ?>">Find Your Home <span aria-hidden="true">&rarr;</span></a>
-                <a class="tlg-btn tlg-btn--ghost" href="<?php echo esc_url(home_url('/about')); ?>">Meet the Team</a>
-            </div>
-
-            <?php
-            // Hovering a market name lights up its state on the map (see home.js).
-            $markets = [
-                'FL' => ['Florida',        'florida'],
-                'NC' => ['North Carolina', 'north-carolina'],
-                'SC' => ['South Carolina', 'south-carolina'],
-                'TN' => ['Tennessee',      'tennessee'],
-            ];
-            ?>
-            <nav class="tlg-hero__states" aria-label="Our markets">
-                <?php foreach ($markets as $code => $m) : ?>
-                    <a class="tlg-hero__state" href="<?php echo esc_url(home_url('/' . $m[1])); ?>" data-state="<?php echo esc_attr($code); ?>"><?php echo esc_html($m[0]); ?></a>
-                <?php endforeach; ?>
-            </nav>
+        <!-- Shared continuous backdrop for both phases. -->
+        <div class="tlg-saga__bg" aria-hidden="true">
+            <div class="tlg-saga__atmos"></div>
+            <?php get_template_part('template-parts/home-usmap'); ?>
+            <div class="tlg-saga__grain"></div>
         </div>
 
-        <div class="tlg-hero__cluster">
-            <?php foreach ($cluster as $i => $p) : if (empty($pos[$i])) break; ?>
-                <figure class="<?php echo esc_attr($pos[$i]); ?>">
-                    <?php if ($p['url'] && $p['url'] !== '#') : ?><a href="<?php echo esc_url($p['url']); ?>"><?php endif; ?>
-                    <img src="<?php echo esc_url($p['img']); ?>" alt="<?php echo esc_attr($p['name']); ?>">
-                    <?php if ($p['url'] && $p['url'] !== '#') : ?></a><?php endif; ?>
-                </figure>
-            <?php endforeach; ?>
+        <!-- Phase A — Meet The Locals Group -->
+        <div class="tlg-saga__phase tlg-saga__phase--meet">
+            <div class="tlg-hero__inner">
+                <div class="tlg-hero__copy">
+                    <h1 class="tlg-display tlg-hero__title">Meet The<br>Locals Group</h1>
+                    <hr class="tlg-hero__divider">
+                    <p class="tlg-hero__lead"><?php echo esc_html($intro); ?></p>
+                    <div class="tlg-hero__cta">
+                        <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_find); ?>">Find Your Home <span aria-hidden="true">&rarr;</span></a>
+                        <a class="tlg-btn tlg-btn--ghost" href="<?php echo esc_url(home_url('/about')); ?>">Meet the Team</a>
+                    </div>
 
-            <!-- clutter: gold seal + handwritten note -->
-            <svg class="tlg-hero__seal" viewBox="0 0 120 120" aria-hidden="true">
-                <defs><path id="tlg-sealcircle" d="M60,60 m-43,0 a43,43 0 1,1 86,0 a43,43 0 1,1 -86,0"/></defs>
-                <circle cx="60" cy="60" r="55" fill="rgba(10,33,31,.85)" stroke="#c8a24a" stroke-width="1"/>
-                <circle cx="60" cy="60" r="46" fill="none" stroke="#c8a24a" stroke-width="2"/>
-                <text font-size="9.5" letter-spacing="2.5"><textPath href="#tlg-sealcircle" startOffset="0">LOCALLY TRUSTED · SOUTHEAST USA · </textPath></text>
-                <text x="60" y="70" text-anchor="middle" font-size="30" fill="#ecd28b">&#9733;</text>
-            </svg>
-            <div class="tlg-hero__note" aria-hidden="true">your local team
-                <svg viewBox="0 0 80 60" fill="none" stroke="#ecd28b" stroke-width="3" stroke-linecap="round"><path d="M4 8 C30 6 54 18 70 44"/><path d="M70 44 L58 40 M70 44 L66 30"/></svg>
+                    <?php // Hovering a market name lights up its state on the map (see home.js). ?>
+                    <nav class="tlg-hero__states" aria-label="Our markets">
+                        <?php foreach ($markets as $code => $m) : ?>
+                            <a class="tlg-hero__state" href="<?php echo esc_url(home_url('/' . $m[1])); ?>" data-state="<?php echo esc_attr($code); ?>"><?php echo esc_html($m[0]); ?></a>
+                        <?php endforeach; ?>
+                    </nav>
+                </div>
+
+                <div class="tlg-hero__cluster">
+                    <?php foreach ($cluster as $i => $p) : if (empty($pos[$i])) break; ?>
+                        <figure class="<?php echo esc_attr($pos[$i]); ?>">
+                            <?php if ($p['url'] && $p['url'] !== '#') : ?><a href="<?php echo esc_url($p['url']); ?>"><?php endif; ?>
+                            <img src="<?php echo esc_url($p['img']); ?>" alt="<?php echo esc_attr($p['name']); ?>">
+                            <?php if ($p['url'] && $p['url'] !== '#') : ?></a><?php endif; ?>
+                        </figure>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- featured listing — bound to locals_lofty_tailored_listing() -->
-    <a class="tlg-hero__listing" href="<?php echo esc_url($hl_url); ?>" aria-label="View featured listing">
-        <span class="tlg-hero__listing-media"<?php echo $hl_photo ? ' style="background-image:url(\'' . esc_url($hl_photo) . '\');"' : ''; ?>>
-            <span class="tlg-hero__listing-status">Just Listed</span>
-            <span class="tlg-hero__listing-fav" aria-hidden="true">&#9829;</span>
-        </span>
-        <span class="tlg-hero__listing-body">
-            <span class="tlg-hero__listing-price"><?php echo esc_html($hl_price); ?></span>
-            <span class="tlg-hero__listing-addr"><?php echo esc_html($hl_addr); ?></span>
-            <span class="tlg-hero__listing-loc"><?php echo esc_html($hl_loc); ?></span>
-            <span class="tlg-hero__listing-specs">
-                <span><b><?php echo esc_html($hl_beds); ?></b> Beds</span>
-                <span><b><?php echo esc_html($hl_baths); ?></b> Baths</span>
-                <span><b><?php echo esc_html($hl_sqft); ?></b> Sq Ft</span>
-            </span>
-            <span class="tlg-hero__listing-cta"><span>View Listing</span><span aria-hidden="true">&rarr;</span></span>
-        </span>
-    </a>
-</section>
+        <!-- Phase B — Find / Get Approved / Sell -->
+        <div class="tlg-saga__phase tlg-saga__phase--action">
+            <div class="tlg-action__brushes" aria-hidden="true">
+                <?php for ($b = 1; $b <= 5; $b++) : ?>
+                    <img class="tlg-action__brush tlg-action__brush--<?php echo $b; ?>" src="<?php echo esc_url("$img_dir/brush$b.png"); ?>" alt="" loading="lazy" decoding="async">
+                <?php endfor; ?>
+            </div>
 
-<!-- ============================ 2. FIND / GET APPROVED / SELL ============================ -->
-<section class="tlg tlg-action" data-reveal>
-    <div class="tlg-action__bg" style="background-image:url('<?php echo esc_url($action_bg); ?>');" aria-hidden="true"></div>
-    <div class="tlg-action__scrim" aria-hidden="true"></div>
+            <p class="tlg-action__brand">
+                <span class="tlg-script">The Locals</span>
+                <span class="tlg-action__brand-sub">GROUP &middot; lpt realty</span>
+            </p>
 
-    <p class="tlg-action__brand">
-        <span class="tlg-script">The Locals</span>
-        <span class="tlg-action__brand-sub">GROUP &middot; lpt realty</span>
-    </p>
+            <?php if ($buyer) : ?>
+                <figure class="tlg-action__agent tlg-action__agent--left"><img src="<?php echo esc_url($buyer['img']); ?>" alt=""></figure>
+            <?php endif; ?>
+            <?php if ($seller) : ?>
+                <figure class="tlg-action__agent tlg-action__agent--right"><img src="<?php echo esc_url($seller['img']); ?>" alt=""></figure>
+            <?php endif; ?>
 
-    <?php $buyer = $pick(5); $seller = $pick(6); ?>
-    <?php if ($buyer) : ?>
-        <figure class="tlg-action__agent tlg-action__agent--left"><img src="<?php echo esc_url($buyer['img']); ?>" alt=""></figure>
-    <?php endif; ?>
-    <?php if ($seller) : ?>
-        <figure class="tlg-action__agent tlg-action__agent--right"><img src="<?php echo esc_url($seller['img']); ?>" alt=""></figure>
-    <?php endif; ?>
+            <a class="tlg-cta tlg-cta--find" href="<?php echo esc_url($cta_find); ?>" aria-label="Find homes">
+                <img src="<?php echo esc_url("$img_dir/find-homes.png"); ?>" alt="Find Homes" loading="lazy" decoding="async">
+            </a>
+            <a class="tlg-cta tlg-cta--sell" href="<?php echo esc_url($cta_sell); ?>" aria-label="Sell homes">
+                <img src="<?php echo esc_url("$img_dir/sell-homes.png"); ?>" alt="Sell Homes" loading="lazy" decoding="async">
+            </a>
 
-    <div class="tlg-action__row">
-        <a class="tlg-cta tlg-cta--find" href="<?php echo esc_url($cta_find); ?>">
-            <span class="tlg-cta__small">Find</span>
-            <span class="tlg-cta__big">Homes</span>
-        </a>
-        <a class="tlg-cta tlg-cta--approve" href="<?php echo esc_url($cta_approve); ?>">
-            <span class="tlg-cta__small">Get</span>
-            <span class="tlg-cta__big">Approved</span>
-        </a>
-        <a class="tlg-cta tlg-cta--sell" href="<?php echo esc_url($cta_sell); ?>">
-            <span class="tlg-cta__small">Sell</span>
-            <span class="tlg-cta__big">Homes</span>
-        </a>
+            <div class="tlg-action__stage">
+                <a class="tlg-cta tlg-cta--approve" href="<?php echo esc_url($cta_approve); ?>" aria-label="Get approved">
+                    <img src="<?php echo esc_url("$img_dir/get_approved_upscaled.webp"); ?>" alt="Get Approved" decoding="async">
+                </a>
+            </div>
+        </div>
+
     </div>
 </section>
 
