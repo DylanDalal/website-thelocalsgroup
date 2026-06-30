@@ -244,9 +244,12 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-saga__atmos {
   position: absolute; inset: 0; z-index: 0;
   background:
-    radial-gradient(85% 70% at 50% 8%, rgba(40, 80, 72, 0.45) 0%, transparent 60%),
-    radial-gradient(120% 100% at 50% 120%, rgba(4, 12, 13, 0.92) 0%, transparent 60%),
-    linear-gradient(160deg, var(--tlg-bg) 0%, var(--tlg-bg-2) 100%);
+    /* green glow anchored to the very top (the hero) */
+    radial-gradient(72% 34% at 50% 0%, rgba(40, 80, 72, 0.45) 0%, transparent 72%),
+    /* grounding vignette anchored to the very bottom of the section */
+    radial-gradient(110% 48% at 50% 100%, rgba(3, 10, 11, 0.65) 0%, transparent 78%),
+    /* continuous dark base spanning the whole section */
+    linear-gradient(180deg, var(--tlg-bg) 0%, var(--tlg-bg-2) 55%, #061416 100%);
 }
 .tlg-saga__bg .tlg-hero__usmap { z-index: 1; }
 .tlg-saga__grain {
@@ -262,12 +265,17 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   display: flex; align-items: center;
   padding: calc(var(--nav-height) + 1rem) clamp(1rem, 2.5vw, 2rem) 2rem;
 }
-/* Left scrim keeps the headline legible over the map; fades out with the phase. */
+/* Left scrim keeps the headline legible over the map. It extends well past the
+   phase (height > 100vh) and feathers out via a vertical mask, so the darkening
+   carries into the Get Approved area instead of cutting off at the 100vh seam. */
 .tlg-saga__phase--meet::before {
-  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  left: 0; right: 0; top: 0; height: 155vh;
   background: linear-gradient(90deg,
     var(--tlg-bg) 0%, rgba(11, 37, 34, 0.92) 22%,
     rgba(11, 37, 34, 0.55) 42%, transparent 62%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 42%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, #000 42%, transparent 100%);
 }
 .tlg-saga__phase--action {
   min-height: 100vh;
@@ -410,6 +418,24 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   width: 100%;
   height: 88vh;
   align-self: center;
+  /* Nudge the whole group down; each figure keeps its own staggered offset. */
+  transform: translateY(5vh);
+}
+/* Teal brush stroke grounding the group — sits low and behind the cutouts
+   (z-index 1, below the figures' 3-6) so the realtors overlap and stand on it.
+   The cluster forms its own (isolated) stacking context, so a blend mode can't
+   lighten it against the dark map; brighten it directly instead so it reads. */
+.tlg-hero__cluster-brush {
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  transform: translateX(-50%) rotate(-1.5deg);
+  width: min(112%, 900px);
+  height: auto;
+  z-index: 1;
+  opacity: 1;
+  pointer-events: none;
+  filter: brightness(2.2) saturate(1.25) drop-shadow(0 0 18px rgba(53, 121, 118, 0.5));
 }
 .tlg-hero__cluster figure {
   position: absolute; top: 50%; margin: 0;
@@ -461,14 +487,37 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   .tlg-hero__cluster .p2,
   .tlg-hero__cluster .p4 { transform: translateY(calc(-50% - 5vh)); }
   .tlg-hero__usmap { opacity: 0.4; }
-  /* Top-to-bottom scrim reads better than the left scrim once stacked. */
-  .tlg-saga__phase--meet::before { background: linear-gradient(180deg, transparent 0%, rgba(11, 37, 34, 0.6) 100%); }
+  /* Top-to-bottom scrim reads better than the left scrim once stacked; revert
+     the extended height/feather used on the wide single-section layout. */
+  .tlg-saga__phase--meet::before {
+    inset: 0; height: auto;
+    background: linear-gradient(180deg, transparent 0%, rgba(11, 37, 34, 0.6) 100%);
+    -webkit-mask-image: none; mask-image: none;
+  }
 }
 
 /* ============================ 2. FIND / APPROVED / SELL ============================
    The action layout now lives inside the saga's pinned stage (.tlg-saga__phase
    --action) and shares the hero's map + gradient backdrop, so there is no
    opaque background of its own — only a soft centre vignette for focus. */
+
+/* Faded South Carolina (Charleston) streetscape ghosted behind the composition.
+   Sits at the back of the action phase (z-index -1, still above the shared map).
+   The image's own alpha is faded with a gradient mask — opaque at the bottom,
+   ramping to fully transparent toward the top — so it dissolves into the dark
+   backdrop rather than sitting on a colour overlay. Kept dim so it reads as a
+   ghost, not a photo. */
+.tlg-action__photo {
+  position: absolute; inset: 0; z-index: -1;
+  background-image: var(--photo);
+  background-size: cover;
+  background-position: center 30%;
+  opacity: 0.45;
+  filter: saturate(0.85) brightness(0.55);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+          mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+}
 
 /* Hand-painted teal brush texture scattered behind the composition. */
 .tlg-action__brushes { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
@@ -554,15 +603,15 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   width: clamp(190px, 22vw, 330px);
   filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.5));
 }
-.tlg-cta--find { left:  clamp(0.75rem, 8vw, 10rem); transform: rotate(-3deg); }
-.tlg-cta--sell { right: clamp(0.75rem, 8vw, 10rem); transform: rotate(3deg); }
+.tlg-cta--find { left:  clamp(2rem, 19vw, 23rem); transform: rotate(-3deg); }
+.tlg-cta--sell { right: clamp(2rem, 19vw, 23rem); transform: rotate(3deg); }
 .tlg-cta--find:hover { transform: rotate(-3deg) translateY(-4px); }
 .tlg-cta--sell:hover { transform: rotate(3deg) translateY(-4px); }
 
-/* Tablet: agents are hidden (<=860px) so tuck the labels nearer the badge. */
+/* Tablet: agents are hidden (<=860px) so let the labels close in on the badge. */
 @media (max-width: 860px) {
-  .tlg-cta--find  { left:  clamp(0.5rem, 3vw, 3rem); }
-  .tlg-cta--sell  { right: clamp(0.5rem, 3vw, 3rem); }
+  .tlg-cta--find  { left:  clamp(1rem, 13vw, 14rem); }
+  .tlg-cta--sell  { right: clamp(1rem, 13vw, 14rem); }
 }
 
 /* Mobile: drop the overlap and stack the three CTAs vertically. */
@@ -578,6 +627,73 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   }
   .tlg-cta--find  { order: -1; transform: rotate(-3deg); }
   .tlg-cta--sell  { transform: rotate(3deg); }
+}
+
+/* ============================ 2b. GET APPROVED — PAINTED SCENES ============================
+   Section 1 is a 100vh "scene": four stacked frames (background1-1…4) flip 1→4 as
+   the section scrolls into view (bootPaintScene in home.js), so a brush stroke
+   paints itself across the skyline. Sections 2 & 3 sit on the tall background2.jpg
+   below. The two images line up at one seam — the frames scale from their BOTTOM
+   edge and background2 from its TOP edge, so that shared edge stays pinned while
+   either layer scales. */
+.tlg-paint { position: relative; isolation: isolate; }
+
+/* Section 1 — flipbook scene -------------------------------------------------*/
+.tlg-paint--scene { min-height: 100vh; overflow: hidden; }
+.tlg-paint__frames { position: absolute; inset: 0; z-index: 0; }
+.tlg-paint__frame {
+  position: absolute; inset: 0;
+  opacity: 0;
+  background-position: center bottom;   /* anchored to the seam edge */
+  background-size: cover;
+  background-repeat: no-repeat;
+  will-change: opacity;
+}
+/* First frame shows the base scene before JS takes over / if it never does. */
+.tlg-paint__frame:first-child { opacity: 1; }
+
+/* Foreground layers — full-bleed rows stacked over the scene -----------------*/
+.tlg-paint__fg {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; gap: 0;
+  pointer-events: none;
+}
+.tlg-paint__cell { height: 100%; }
+.tlg-paint__fg img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* Layer 1 — 33vw / 67vw */
+.tlg-paint__cell--phone { flex: 0 0 33vw; padding: 30px; }
+.tlg-paint__cell--right { flex: 0 0 67vw; }
+/* Layer 2 — 8.33vw / 46.6vw / remainder */
+.tlg-paint__cell--spacer { flex: 0 0 8.33vw; }
+.tlg-paint__cell--brush  { flex: 0 0 46.6vw; }
+.tlg-paint__cell--rest   { flex: 1 1 auto; }
+
+/* Sections 2 & 3 — over the tall background2 ---------------------------------*/
+.tlg-paint--fall { overflow: hidden; }
+.tlg-paint__fall-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background-image: var(--bg2);
+  background-position: center top;      /* meets the scene's bottom edge */
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.tlg-paint__block {
+  position: relative; z-index: 2;
+  max-width: 62ch;
+  margin-inline: auto;
+  padding: clamp(4rem, 14vh, 9rem) var(--gutter);
+  text-align: center;
+  text-shadow: 0 2px 22px rgba(3, 12, 13, 0.55);
+}
+.tlg-paint__block--a { padding-top: clamp(8rem, 28vh, 18rem); }  /* clear the paint streaks running down from the seam */
+.tlg-paint__block--b { padding-bottom: clamp(6rem, 18vh, 12rem); }
+.tlg-paint__body { margin-top: 1rem; color: var(--tlg-muted); font-size: 1.05rem; line-height: 1.7; }
+.tlg-paint__block .tlg-btn { margin-top: 1.6rem; }
+
+@media (max-width: 560px) { .tlg-paint--scene { min-height: 82vh; } }
+@media (prefers-reduced-motion: reduce) {
+  .tlg-paint__frame:first-child { opacity: 0; }
+  .tlg-paint__frame:last-child  { opacity: 1; }   /* show the finished painting */
 }
 
 /* ============================ 3. STAY IN TOUCH ============================ */

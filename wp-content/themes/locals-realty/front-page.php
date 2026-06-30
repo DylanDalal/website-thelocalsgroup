@@ -114,6 +114,7 @@ $seller = $pick(6);
                 </div>
 
                 <div class="tlg-hero__cluster">
+                    <img class="tlg-hero__cluster-brush" src="<?php echo esc_url("$img_dir/brush4.png"); ?>" alt="" aria-hidden="true" decoding="async">
                     <?php foreach ($cluster as $i => $p) : if (empty($pos[$i])) break; ?>
                         <figure class="<?php echo esc_attr($pos[$i]); ?>">
                             <?php if ($p['url'] && $p['url'] !== '#') : ?><a href="<?php echo esc_url($p['url']); ?>"><?php endif; ?>
@@ -127,6 +128,7 @@ $seller = $pick(6);
 
         <!-- Phase B — Find / Get Approved / Sell -->
         <div class="tlg-saga__phase tlg-saga__phase--action">
+            <div class="tlg-action__photo" aria-hidden="true" style="--photo:url('<?php echo esc_url("$img_dir/state-card-south-carolina.jpg"); ?>');"></div>
             <div class="tlg-action__brushes" aria-hidden="true">
                 <?php for ($b = 1; $b <= 5; $b++) : ?>
                     <img class="tlg-action__brush tlg-action__brush--<?php echo $b; ?>" src="<?php echo esc_url("$img_dir/brush$b.png"); ?>" alt="" loading="lazy" decoding="async">
@@ -159,6 +161,58 @@ $seller = $pick(6);
             </div>
         </div>
 
+    </div>
+</section>
+
+<!-- ====== 2b. GET APPROVED — PAINTED SCENES (background1 flipbook → background2) ======
+     Three stacked sections sharing two backdrops that meet at a single seam:
+       · Section 1 — a 100vh "scene" on background1-1…4. As it scrolls into view the
+         four frames flip 1→4 so a brush stroke paints itself across the skyline.
+         The frames scale from their BOTTOM edge, pinning the edge that meets the seam.
+       · Sections 2 & 3 — content blocks over the tall background2.jpg, which scales
+         from its TOP edge, so the paint streaks flow on out of section 1 and the
+         shared seam never drifts. Behaviour lives in home.js (bootPaintScene). -->
+<section class="tlg tlg-paint tlg-paint--scene" data-paint-scene aria-label="Get approved">
+    <div class="tlg-paint__frames" aria-hidden="true">
+        <?php for ($i = 1; $i <= 4; $i++) : ?>
+            <div class="tlg-paint__frame" style="background-image:url('<?php echo esc_url("$img_dir/background1-$i.jpg"); ?>');"></div>
+        <?php endfor; ?>
+    </div>
+    <!-- Foreground layer 1 — two columns, 33vw / 67vw, no gap. -->
+    <div class="tlg-paint__fg tlg-paint__fg--1" aria-hidden="true">
+        <div class="tlg-paint__cell tlg-paint__cell--phone">
+            <img src="<?php echo esc_url("$img_dir/phone.webp"); ?>" alt="" decoding="async">
+        </div>
+        <div class="tlg-paint__cell tlg-paint__cell--right"><!-- image TBD --></div>
+    </div>
+
+    <!-- Foreground layer 2 — three columns, 8.33vw / 46.6vw / remainder. -->
+    <div class="tlg-paint__fg tlg-paint__fg--2" aria-hidden="true">
+        <div class="tlg-paint__cell tlg-paint__cell--spacer"></div>
+        <div class="tlg-paint__cell tlg-paint__cell--brush">
+            <img src="<?php echo esc_url("$img_dir/brush1.webp"); ?>" alt="" loading="lazy" decoding="async">
+        </div>
+        <div class="tlg-paint__cell tlg-paint__cell--rest"></div>
+    </div>
+</section>
+
+<section class="tlg tlg-paint tlg-paint--fall" data-paint-fall
+         style="--bg2:url('<?php echo esc_url("$img_dir/background2.jpg"); ?>');">
+    <div class="tlg-paint__fall-bg" aria-hidden="true"></div>
+
+    <!-- Section 2 — content block A (placeholder copy; swap in real content) -->
+    <div class="tlg-paint__block tlg-paint__block--a" data-reveal>
+        <p class="tlg-script tlg-paint__kicker">Section two</p>
+        <h2 class="tlg-display tlg-paint__title">Placeholder headline</h2>
+        <p class="tlg-paint__body">Placeholder copy for the second section — replace this with the real message that belongs over background2.</p>
+    </div>
+
+    <!-- Section 3 — content block B (placeholder copy; swap in real content) -->
+    <div class="tlg-paint__block tlg-paint__block--b" data-reveal>
+        <p class="tlg-script tlg-paint__kicker">Section three</p>
+        <h2 class="tlg-display tlg-paint__title">Placeholder headline</h2>
+        <p class="tlg-paint__body">Placeholder copy for the third section — replace this with the real message and call to action.</p>
+        <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_approve); ?>">Get approved</a>
     </div>
 </section>
 

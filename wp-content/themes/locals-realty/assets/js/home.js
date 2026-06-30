@@ -109,11 +109,49 @@
     update();
   }
 
+  // ---- Painted "Get Approved" scene (background1 flipbook) ----
+  // Section 1 (.tlg-paint--scene) stacks four frames (background1-1…4). As the
+  // section scrolls into view we map progress 0→1 across the frames, crossfading
+  // 1→4 so the brush stroke paints itself in. Opacity only — no scaling.
+  function bootPaintScene() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var scene = document.querySelector('[data-paint-scene]');
+    var frames = scene ? Array.prototype.slice.call(scene.querySelectorAll('.tlg-paint__frame')) : [];
+    if (!frames.length) return;
+
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var vh = window.innerHeight;
+      // 0 when the scene's top sits ~60% down the viewport; 1 after ~55vh of scroll.
+      var top = scene.getBoundingClientRect().top;
+      var progress = Math.min(1, Math.max(0, (vh * 0.6 - top) / (vh * 0.55)));
+      var total = frames.length;
+      var f = progress * (total - 1);
+      var active = Math.min(total - 1, Math.floor(f));
+      var t = f - active;
+      // Hold each frame, then crunch the crossfade into the middle of its range.
+      var fade = Math.min(1, Math.max(0, (t - 0.375) / 0.25));
+      for (var i = 0; i < total; i++) {
+        var opacity = 0;
+        if (i === active) opacity = 1;
+        else if (i === active + 1) opacity = fade;
+        frames[i].style.opacity = opacity.toFixed(3);
+      }
+    }
+    function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    update();
+  }
+
   function boot() {
     bootHeaderSearch();
     bootScrolledHeader();
     bootStateHighlight();
     bootMapParallax();
+    bootPaintScene();
   }
 
   if (document.readyState === 'loading') {
