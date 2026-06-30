@@ -59,6 +59,7 @@ body.home .site-main { background: transparent; }
 /* Gold foil text — gradient clipped to glyphs. */
 .tlg-gold-text,
 .tlg-tagline,
+.tlg-paint__wave-tagline,
 .tlg-action__brand .tlg-script,
 .tlg-paint__brand-name,
 .tlg-touch__learn,
@@ -189,7 +190,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   font-size: clamp(3rem, 9vw, 7.5rem);
   line-height: 0.9;
   color: var(--tlg-gold-hi);
-  text-shadow: 0 4px 34px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 5px 12px rgba(0, 0, 0, 0.275);
 }
 .tlg-opener__brand span {
   display: block;
@@ -265,7 +266,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-saga__phase--meet {
   min-height: 100vh;
   display: flex; align-items: center;
-  padding: calc(var(--nav-height) + 1rem) clamp(1rem, 2.5vw, 2rem) 2rem;
+  padding: calc(var(--nav-height) + 1rem) clamp(1rem, 2.5vw, 2rem) 2rem clamp(0.4rem, 0.8vw, 0.9rem);
 }
 /* Left scrim keeps the headline legible over the map. It extends well past the
    phase (height > 100vh) and feathers out via a vertical mask, so the darkening
@@ -363,7 +364,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   line-height: 0.96;
   margin: 0;
   color: #fff;
-  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 5px 12px rgba(0, 0, 0, 0.175);
   transform: scaleX(0.9); transform-origin: left;   /* 90% letter width */
 }
 .tlg-hero__divider {
@@ -423,6 +424,16 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   align-self: center;
   /* Nudge the whole group down; each figure keeps its own staggered offset. */
   transform: translateY(5vh);
+}
+/* Circle brush backdrop — lives in .tlg-saga__bg at z-index 0, so it sits BEHIND the
+   US map (z-index 1), roughly where the realtor cluster is. 10px padding insets the art. */
+.tlg-hero__circlebrush {
+  position: absolute; z-index: 0;
+  top: 50vh; right: 0;                 /* rests against the right edge of the page */
+  transform: translateY(-50%);
+  width: clamp(520px, 52vw, 1040px); aspect-ratio: 1;   /* enlarged (~1.25×) */
+  padding: 10px;
+  background: url("../images/circlebrush.png") content-box center / contain no-repeat;
 }
 /* Teal brush stroke grounding the group — sits low and behind the cutouts
    (z-index 1, below the figures' 3-6) so the realtors overlap and stand on it.
@@ -677,8 +688,8 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-paint__frames { position: absolute; inset: 0; z-index: 0; }
 .tlg-paint__frame {
   position: absolute; inset: 0;
-  background-position: left bottom;     /* left-anchored: fills the screen, crops the right */
-  background-size: cover;
+  background-position: left bottom;     /* bottom-left anchor */
+  background-size: 100% auto;           /* width-based: same horizontal scale as background2 so they line up at the seam */
   background-repeat: no-repeat;
   /* Directional wipe: the paint in each frame is a superset of the one before, so
      rather than cross-fading we keep lower frames visible and wipe the next one in
@@ -726,9 +737,9 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   flex: 0 0 max(20vw, 280px);                           /* floor so the column never starves */
   display: flex; flex-direction: column; gap: 2vh;      /* gap between content blocks */
   color: var(--tlg-ink);
-  text-shadow: 0 2px 16px rgba(3, 12, 13, 0.5);
+  text-shadow: 0 5px 12px rgba(3, 12, 13, 0.25);
 }
-.tlg-paint__copy-pad  { height: 12vh; flex: none; }     /* 1 — larger top spacer */
+.tlg-paint__copy-pad  { height: 7vh; flex: none; }      /* 1 — top spacer (shifted copy up 5vh) */
 .tlg-paint__copy-fill { flex: 1 1 auto; }               /* 6 — fills the rest */
 /* 2 — The Locals Group lockup */
 .tlg-paint__brand { height: 8vh; flex: none; margin: 0; display: grid; align-content: center; line-height: 1; }
@@ -745,7 +756,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   height: 9vh; flex: none; margin: 0; width: fit-content;
   display: inline-flex; align-items: center; gap: 0.4em;
   padding: 0 2.6em 0 2em;
-  color: #fff; text-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
+  color: #fff; text-shadow: 0 5px 12px rgba(0, 0, 0, 0.225);
   font-family: var(--tlg-display); font-weight: 800; font-style: italic;
   text-transform: uppercase; letter-spacing: 0.03em; font-size: 1.7vw; line-height: 1.05;
 }
@@ -756,7 +767,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 }
 .tlg-paint__pin { width: 1em; height: 1em; fill: currentColor; flex: none; }
 /* 5 — body copy (black, shaped + shifted right to clear the phone/brush) */
-.tlg-paint__copy-body { margin: 0; flex: none; max-width: 100%; transform: translateX(-1vw); color: #000; font-weight: 700; text-shadow: none; line-height: 1.55; font-size: clamp(0.95rem, 1.3vw, 1.5rem); }
+.tlg-paint__copy-body { margin: 0; flex: none; max-width: 100%; transform: translateX(4vw); color: #000; font-weight: 700; text-shadow: none; line-height: 1.55; font-size: clamp(0.95rem, 1.3vw, 1.5rem); }
 
 /* Layer 1 — 33vw / 67vw */
 .tlg-paint__cell--phone { flex: 0 0 auto; padding: 30px; transform-origin: left center; }
@@ -771,40 +782,83 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 @media (prefers-reduced-motion: reduce) { .tlg-paint__fg .tlg-paint__phone { transform: none; } }
 .tlg-paint__cell--right { flex: 1 1 auto; }
 /* Layer 2 — left spacer / brush (sized by height) / remainder */
-.tlg-paint__cell--spacer { flex: 0 0 8.33vw; }
+.tlg-paint__cell--spacer { flex: 0 0 11.33vw; }   /* 8.33 + 3vw lead-in before the brush */
 .tlg-paint__cell--brush  { flex: 0 0 auto; transform-origin: left center; }
 .tlg-paint__cell--rest   { flex: 1 1 auto; }
 
-/* Sections 2 & 3 — over the tall background2. ~330vh tall so the sticky wave stays
-   pinned the whole way through (scene 100vh + this = ~430vh total). */
-.tlg-paint--fall { position: relative; overflow: clip; min-height: 200vh; }   /* = background2 height, no dark gap */
+/* Our Locals cards + the wave scrollytelling region. Tall enough for the wave to start
+   low and still have scrub room; background2 fills the whole section (no dark gap). */
+.tlg-paint--fall { position: relative; overflow: clip; min-height: 320vh; }
 .tlg-paint__fall-bg {
-  position: absolute; top: 0; left: 0; right: 0; height: 200vh; z-index: 0;
+  position: absolute; inset: 0; z-index: 0;
   background-image: var(--bg2);
-  background-position: left top;        /* left-anchored: fills the screen, crops the right */
-  background-size: cover;
+  background-position: left top;        /* top-left anchor */
+  background-size: 100% auto;           /* same horizontal scale as background1 → seam lines up */
   background-repeat: no-repeat;
 }
 
-/* Wave scrub: spans the whole 330vh section; its sticky frame stays pinned to the
-   viewport for the entire length while scroll scrubs the WebP sequence. Sits in
-   FRONT of the cards/section-3 content (z-index 4) — the frames carry alpha, so the
-   wave composites over everything below it. */
+/* Wave: a sticky stage holding BACKGROUND content (behind the frames, shows through their
+   alpha), the frame stack, and FOREGROUND content (in front, hidden until the smash). */
 .tlg-paint__wave {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
-  top: 85vh;            /* moved ~35vh further down the document */
+  top: 125vh;           /* ~25vh below the cards */
   pointer-events: none;
 }
 .tlg-paint__wave-sticky { position: sticky; top: 0; height: 100vh; }
 /* All frames stacked; scrub toggles opacity (no src swap). center top keeps the crest
    + the image's transparent top edge in view, so the wave fades into the content above. */
 .tlg-paint__wave-frame {
-  position: absolute; inset: 0;
+  position: absolute; inset: 0; z-index: 1;
   display: block; width: 100%; height: 100%;
   object-fit: cover; object-position: center top;
-  opacity: 0;
+  visibility: hidden;   /* only the active frame is made visible (paints just one) */
 }
-.tlg-paint__wave-frame:first-child { opacity: 1; }
+/* Background / foreground content layers either side of the frame stack. */
+.tlg-paint__wave-back,
+.tlg-paint__wave-front {
+  position: absolute; inset: 0;
+  display: grid; place-items: center; text-align: center;
+  padding: var(--gutter);
+  color: var(--tlg-ink);
+}
+/* Background content: a 100vw×100vh box starting 5vh higher, 10vw side padding, 0 vertical;
+   stacked from the top — a 40vh title box then a 12vh subtitle box. */
+.tlg-paint__wave-back {
+  z-index: 0;
+  inset: -5vh 0 auto 0; height: 100vh;
+  display: flex; flex-direction: column; place-items: stretch;
+  padding: 10vh 10vw 0;          /* 10vh above Lifestyle Realty */
+  text-align: left;
+}
+.tlg-paint__wave-bg-title {
+  height: 40vh; flex: none; margin: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  font-weight: 800; text-transform: uppercase;
+  font-size: 19vh; line-height: 0.9;     /* expands to fill the 40vh box */
+  color: #333; text-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
+}
+.tlg-paint__wave-bg-sub {
+  height: 12vh; flex: none; margin: 0;
+  display: flex; align-items: center;
+  transform: translateY(-5vh);
+  font-size: clamp(1.2rem, 2.8vw, 2.6rem);
+  color: #333; text-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
+}
+.tlg-paint__wave-front { z-index: 5; opacity: 0; }  /* in front, smashed in at the threshold */
+/* Join grid as the foreground — fit it within the 100vh sticky stage, with a buffer above. */
+.tlg-paint__wave-front .tlg-paint__join { width: 100%; padding-block: clamp(3rem, 9vh, 7rem) clamp(1rem, 3vh, 2rem); margin: 0 auto; }
+.tlg-paint__wave-copy { max-width: 60ch; display: grid; gap: 0.8rem; justify-items: center; }
+.tlg-paint__wave-headline {
+  margin: 0; font-weight: 800;
+  font-size: clamp(2.5rem, 6vw, 6rem); line-height: 0.95;
+  color: var(--tlg-ink); text-shadow: 0 5px 12px rgba(0, 0, 0, 0.225);
+}
+/* Background headline — far bigger, no shadow. */
+.tlg-paint__wave-back .tlg-paint__wave-headline {
+  font-size: clamp(3.5rem, 12vw, 14rem); line-height: 0.9;
+  text-shadow: none;
+}
+.tlg-paint__wave-tagline { margin: 0.25rem 0 0; font-size: clamp(1.25rem, 2.4vw, 2.2rem); }
 
 /* Section 2 content sits above the wave; section 3 is its own 100vh block. */
 .tlg-paint__block {
@@ -813,7 +867,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   margin-inline: auto;
   padding: clamp(4rem, 14vh, 9rem) var(--gutter);
   text-align: center;
-  text-shadow: 0 2px 22px rgba(3, 12, 13, 0.55);
+  text-shadow: 0 5px 12px rgba(3, 12, 13, 0.275);
 }
 .tlg-paint__block--a {
   min-height: 100vh;                              /* cards zone */
@@ -838,13 +892,13 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   margin: 0 0 clamp(1.5rem, 3vw, 2.5rem);
   padding-inline: var(--gutter);
   text-align: center;
-  text-shadow: 0 2px 22px rgba(3, 12, 13, 0.55);
+  text-shadow: 0 5px 12px rgba(3, 12, 13, 0.275);
 }
 .tlg-cards {
   overflow-x: auto; overflow-y: hidden;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
-  padding: 0.5rem var(--gutter) 1.25rem 2vw;   /* 2vw lead-in before the first card */
+  padding: 0.5rem var(--gutter) 1.25rem 5vw;   /* lead-in before the first card */
   scrollbar-width: none;                       /* Firefox — hide scrollbar */
   -ms-overflow-style: none;                    /* legacy Edge */
 }
@@ -880,8 +934,9 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   font-weight: 600; text-transform: uppercase; line-height: 0.82;
 }
 .tlg-card__name span { display: block; white-space: nowrap; }
-.tlg-card__first { font-size: clamp(1.5rem, 2.5vw, 2.3rem); color: rgba(244, 236, 216, 0.95); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); }
-.tlg-card__last  { font-size: clamp(1.1rem, 1.85vw, 1.7rem); color: rgba(244, 236, 216, 0.3); }
+.tlg-card__last { margin-top: 0.28em; }   /* more space between first and last name */
+.tlg-card__first { font-size: clamp(1.9rem, 3.2vw, 3rem); color: #d0d0d0; text-shadow: 0 5px 12px rgba(0, 0, 0, 0.25); }
+.tlg-card__last  { font-size: clamp(1.45rem, 2.4vw, 2.25rem); color: #8a8a8a; }
 .tlg-card__photo {
   position: absolute; inset: 0; z-index: 3;
   display: flex; align-items: flex-end; justify-content: center;
@@ -889,6 +944,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-card__photo img {
   width: 100%; height: 90%;
   object-fit: contain; object-position: bottom;
+  transform: translateY(16%);                 /* drop the figure so the names clear its head */
   filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.45));
 }
 .tlg-card__link:hover .tlg-card__bg { transform: scale(1.06); }
@@ -1045,7 +1101,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   position: absolute; inset: auto 0 0.75rem 0; z-index: 1;
   text-align: center; color: var(--tlg-ink);
   font-size: clamp(0.95rem, 1.4vw, 1.4rem); line-height: 0.95;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
   transition: color 0.3s ease;
 }
 .tlg-local__name span { display: block; }
@@ -1071,24 +1127,29 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 }
 .tlg-join__card a {
   display: block; position: relative;
+  aspect-ratio: 3 / 4;                            /* all cards identical size */
   background: var(--tlg-panel);
-  border: 1px solid var(--tlg-line);
+  border: 1px solid rgba(200, 162, 74, 0.75);     /* gold border */
   border-radius: 14px;
   overflow: hidden;
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 .tlg-join__card a:hover {
   transform: translateY(-4px);
-  border-color: var(--tlg-gold);
+  border-color: var(--tlg-gold-hi);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
   text-decoration: none;
 }
 .tlg-join__media {
-  display: block; aspect-ratio: 4 / 3;
+  position: absolute; inset: 0;
   background-size: cover; background-position: center;
   filter: brightness(0.6) saturate(0.9);
 }
-.tlg-join__label { display: block; text-align: center; padding: 1.1rem 1rem 1.4rem; }
+.tlg-join__card a::after {                         /* readability gradient for the label */
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 42%, rgba(7, 25, 27, 0.85) 100%);
+}
+.tlg-join__label { position: absolute; inset: auto 0 0 0; z-index: 1; text-align: center; padding: 1rem 0.8rem 1.3rem; }
 .tlg-join__eyebrow { display: block; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tlg-muted); margin-bottom: 0.35rem; }
 .tlg-join__name { display: block; font-size: clamp(1.1rem, 1.8vw, 1.5rem); color: var(--tlg-gold-hi); }
 @media (max-width: 860px) { .tlg-join__grid { grid-template-columns: repeat(2, 1fr); } }

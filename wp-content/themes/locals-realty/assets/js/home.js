@@ -203,23 +203,32 @@
     catch (e) { slots = []; }
     if (!slots.length) slots = frames.map(function (_, i) { return i; });
 
+    var back  = track.querySelector('[data-wave-back]');
+    var front = track.querySelector('[data-wave-front]');
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var total = frames.length;
-    var loaded = frames.map(function (f) { return !!(f.complete && f.naturalWidth > 0); });
+    var SMASH = Math.max(1, Math.round(total * 0.62));   // focus smashes from back→front here
+    var loaded = frames.map(function () { return false; });   // only true once DECODED
     var ticking = false, shown = 0, nextLoad = 0;
 
     function refresh() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
 
+    // A frame is only eligible to show once it has finished DECODING (not just loading),
+    // otherwise toggling opacity to it decodes-on-paint = the empty flash.
+    function markReady(idx, el) {
+      var done = function () { loaded[idx] = true; refresh(); };
+      if (el.decode) { el.decode().then(done).catch(done); } else { done(); }
+    }
     // Assign src to frames 0..n (in order) so they decode ahead of being shown.
     function loadUpTo(n) {
       while (nextLoad <= n && nextLoad < total) {
         var f = frames[nextLoad];
         if (!f.getAttribute('src') && f.getAttribute('data-src')) {
           (function (idx, el) {
-            el.addEventListener('load', function () { loaded[idx] = true; refresh(); });
+            el.addEventListener('load', function () { markReady(idx, el); });
             el.src = el.getAttribute('data-src');
           })(nextLoad, f);
-        } else if (f.complete && f.naturalWidth > 0) { loaded[nextLoad] = true; }
+        } else if (f.complete && f.naturalWidth > 0) { markReady(nextLoad, f); }
         nextLoad++;
       }
     }
@@ -234,8 +243,10 @@
     }
     function show(i) {
       if (i === shown) return;
-      frames[shown].style.opacity = '0';
-      frames[i].style.opacity = '1';
+      // visibility (not opacity) so only the ONE active frame is ever painted/composited
+      // — the other 12 large frames cost nothing. This is what kills the scroll lag.
+      frames[shown].style.visibility = 'hidden';
+      frames[i].style.visibility = 'visible';
       shown = i;
     }
 
@@ -259,6 +270,11 @@
         var p = Math.min(1, Math.max(0, (raw - START) / (END - START)));
         u = slots[Math.round(p * (slots.length - 1))];
       }
+      // Smash: hard-cut focus from background to foreground once the wave covers the
+      // screen (no transition — it's a smash, synced to the scrub).
+      var past = u >= SMASH;
+      if (back)  back.style.opacity  = past ? '0' : '1';
+      if (front) front.style.opacity = past ? '1' : '0';
       show(nearestLoaded(u));
     }
 

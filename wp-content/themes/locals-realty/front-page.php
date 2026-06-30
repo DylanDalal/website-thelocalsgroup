@@ -89,6 +89,8 @@ $seller = $pick(6);
         <!-- Shared continuous backdrop for both phases. -->
         <div class="tlg-saga__bg" aria-hidden="true">
             <div class="tlg-saga__atmos"></div>
+            <!-- Circle brush backdrop, sits behind the US map (where the realtors are). -->
+            <div class="tlg-hero__circlebrush"></div>
             <?php get_template_part('template-parts/home-usmap'); ?>
             <div class="tlg-saga__grain"></div>
         </div>
@@ -147,12 +149,12 @@ $seller = $pick(6);
                 <figure class="tlg-action__agent tlg-action__agent--right"><img src="<?php echo esc_url($seller['img']); ?>" alt=""></figure>
             <?php endif; ?>
 
-            <a class="tlg-cta tlg-cta--find" href="<?php echo esc_url($cta_find); ?>" aria-label="Find homes">
+            <span class="tlg-cta tlg-cta--find">
                 <img src="<?php echo esc_url("$img_dir/find-homes.png"); ?>" alt="Find Homes" loading="lazy" decoding="async">
-            </a>
-            <a class="tlg-cta tlg-cta--sell" href="<?php echo esc_url($cta_sell); ?>" aria-label="Sell homes">
+            </span>
+            <span class="tlg-cta tlg-cta--sell">
                 <img src="<?php echo esc_url("$img_dir/sell-homes.png"); ?>" alt="Sell Homes" loading="lazy" decoding="async">
-            </a>
+            </span>
 
             <div class="tlg-action__stage">
                 <a class="tlg-cta tlg-cta--approve" href="<?php echo esc_url($cta_approve); ?>" aria-label="Get approved">
@@ -277,9 +279,41 @@ $wave_slots  = array_map(fn($u) => $wave_uidx[$u], $wave_frames);
     <div class="tlg-paint__wave" data-wave-track aria-hidden="true"
          data-slots="<?php echo esc_attr(wp_json_encode($wave_slots)); ?>">
         <div class="tlg-paint__wave-sticky">
+            <!-- BEHIND the wave (shows through its alpha) until the smash. -->
+            <div class="tlg-paint__wave-back" data-wave-back>
+                <div class="tlg-display tlg-paint__wave-bg-title">Lifestyle<br>Realty</div>
+                <p class="tlg-paint__wave-bg-sub">Build your new life with a local.</p>
+            </div>
             <?php foreach ($wave_unique as $ui => $uurl) : ?>
-                <img class="tlg-paint__wave-frame" data-src="<?php echo esc_url($uurl); ?>"<?php echo $ui === 0 ? ' src="' . esc_url($uurl) . '"' : ''; ?> alt="" decoding="async">
+                <img class="tlg-paint__wave-frame" data-src="<?php echo esc_url($uurl); ?>"<?php echo $ui === 0 ? ' src="' . esc_url($uurl) . '" style="visibility:visible"' : ''; ?> alt="" decoding="async">
             <?php endforeach; ?>
+            <!-- IN FRONT of the wave — the Join the Team grid, smashed in once the wave covers the screen. -->
+            <?php
+            $join_cards = [
+                ['eyebrow' => 'Become a Preferred',   'title' => 'Vendor',             'img' => 'florida3.webp', 'url' => $gf('join_vendor_url',    home_url('/join'))],
+                ['eyebrow' => 'Become a Preferred',   'title' => 'Lender',             'img' => 'florida4.webp', 'url' => $gf('join_lender_url',    home_url('/join'))],
+                ['eyebrow' => 'Become Our Preferred', 'title' => 'Business Affiliate', 'img' => 'florida5.webp', 'url' => $gf('join_affiliate_url', home_url('/join'))],
+                ['eyebrow' => 'Partner With',         'title' => 'The Locals Group',   'img' => 'florida6.webp', 'url' => $gf('join_partner_url',   home_url('/join'))],
+            ];
+            ?>
+            <div class="tlg-paint__wave-front" data-wave-front>
+                <div class="tlg tlg-join tlg-paint__join">
+                    <h2 class="tlg-display tlg-join__title">Join The Team</h2>
+                    <ul class="tlg-join__grid">
+                        <?php foreach ($join_cards as $c) : $jimg = locals_image_url(null, $c['img'], 'locals-card'); ?>
+                            <li class="tlg-join__card">
+                                <a href="<?php echo esc_url($c['url']); ?>">
+                                    <span class="tlg-join__media"<?php echo $jimg ? ' style="background-image:url(\'' . esc_url($jimg) . '\');"' : ''; ?>></span>
+                                    <span class="tlg-join__label">
+                                        <span class="tlg-join__eyebrow"><?php echo esc_html($c['eyebrow']); ?></span>
+                                        <span class="tlg-join__name tlg-display"><?php echo esc_html(strtoupper($c['title'])); ?></span>
+                                    </span>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
     <?php endif; ?>
@@ -318,129 +352,7 @@ $wave_slots  = array_map(fn($u) => $wave_uidx[$u], $wave_frames);
         </div>
     </div>
 
-    <!-- Section 3 — content below Our Locals. -->
-    <div class="tlg-paint__final">
-        <div class="tlg-paint__block tlg-paint__block--b" data-reveal>
-            <p class="tlg-script tlg-paint__kicker">Section three</p>
-            <h2 class="tlg-display tlg-paint__title">Placeholder headline</h2>
-            <p class="tlg-paint__body">Placeholder copy for the third section — replace this with the real message and call to action.</p>
-            <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_approve); ?>">Get approved</a>
-        </div>
-    </div>
 </section>
 
-<!-- 50vh cream band, below background2.jpg in the document. -->
-<section class="tlg tlg-cream" aria-hidden="true"></section>
-
-<!-- ============================ 3. STAY IN TOUCH / LEARN THE AREA ============================ -->
-<section class="tlg tlg-touch" data-reveal>
-    <div class="tlg-touch__inner">
-        <div class="tlg-phone" aria-hidden="true">
-            <div class="tlg-phone__notch"></div>
-            <div class="tlg-phone__screen">
-                <?php
-                $listing = function_exists('locals_lofty_tailored_listing') ? locals_lofty_tailored_listing() : [];
-                $l_img   = $listing['photo'] ?? '';
-                $l_price = isset($listing['price']) ? locals_format_price($listing['price']) : '$90,000';
-                $l_addr  = $listing['address'] ?? '789 Atlantic Ave #621';
-                $l_loc   = trim(implode(', ', array_filter([$listing['city'] ?? 'Daytona Beach', $listing['state'] ?? 'FL'])));
-                $l_photo = $l_img ?: locals_image_url(null, 'florida2.webp');
-                ?>
-                <div class="tlg-phone__photo"<?php echo $l_photo ? ' style="background-image:url(\'' . esc_url($l_photo) . '\');"' : ''; ?>>
-                    <span class="tlg-phone__tag">For Sale</span>
-                </div>
-                <div class="tlg-phone__body">
-                    <p class="tlg-phone__price"><?php echo esc_html($l_price); ?></p>
-                    <p class="tlg-phone__addr"><?php echo esc_html($l_addr); ?></p>
-                    <p class="tlg-phone__loc"><?php echo esc_html($l_loc); ?></p>
-                    <p class="tlg-phone__beds"><strong>1</strong> Bath</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="tlg-touch__copy">
-            <p class="tlg-script tlg-touch__brand">The Locals <span>Group</span></p>
-            <h2 class="tlg-display tlg-touch__title">Stay<br>In<br>Touch</h2>
-            <p class="tlg-touch__pin"><span aria-hidden="true">&#9679;</span> <span class="tlg-script tlg-touch__learn">Learn the area</span></p>
-            <p class="tlg-touch__body"><?php echo esc_html($touch_body); ?></p>
-            <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($touch_link); ?>">Stay in touch</a>
-        </div>
-
-        <div class="tlg-touch__agents" aria-hidden="false">
-            <?php
-            $featured = [$pick(7), $pick(8), $pick(9)];
-            foreach ($featured as $j => $f) : if (!$f) continue;
-                $first = explode(' ', $f['name'])[0];
-                $rest  = trim(substr($f['name'], strlen($first)));
-            ?>
-                <figure class="tlg-touch__agent" style="--n:<?php echo $j; ?>;">
-                    <img src="<?php echo esc_url($f['img']); ?>" alt="<?php echo esc_attr($f['name']); ?>">
-                    <figcaption>
-                        <span class="tlg-script tlg-touch__agent-first"><?php echo esc_html($first); ?></span>
-                        <?php if ($rest) : ?><span class="tlg-touch__agent-last"><?php echo esc_html(strtoupper($rest)); ?></span><?php endif; ?>
-                    </figcaption>
-                </figure>
-            <?php endforeach; ?>
-        </div>
-    </div>
-
-    <ul class="tlg-features">
-        <li><strong>Local Expertise</strong><span>You can trust</span></li>
-        <li><strong>Luxury Service</strong><span>Personal touch</span></li>
-        <li><strong>Community First</strong><span>Always local</span></li>
-    </ul>
-    <p class="tlg-script tlg-tagline">Local Knowledge. Lasting Connections. Exceptional Results.</p>
-</section>
-
-<!-- ============================ 4. OUR LOCALS ============================ -->
-<section class="tlg tlg-locals" data-reveal>
-    <h2 class="tlg-display tlg-locals__title">Our Locals</h2>
-    <ul class="tlg-locals__grid" data-reveal data-reveal-stagger="0.07">
-        <?php
-        $grid = array_slice($roster, 0, 6);
-        foreach ($grid as $a) :
-            $first = explode(' ', $a['name'])[0];
-            $rest  = trim(substr($a['name'], strlen($first)));
-            $tag   = $a['url'] && $a['url'] !== '#' ? 'a' : 'div';
-        ?>
-            <li class="tlg-local">
-                <<?php echo $tag; ?> class="tlg-local__link"<?php echo $tag === 'a' ? ' href="' . esc_url($a['url']) . '"' : ''; ?>>
-                    <span class="tlg-local__photo"><img src="<?php echo esc_url($a['img']); ?>" alt="<?php echo esc_attr($a['name']); ?>"></span>
-                    <span class="tlg-local__name tlg-display">
-                        <span><?php echo esc_html(strtoupper($first)); ?></span>
-                        <?php if ($rest) : ?><span><?php echo esc_html(strtoupper($rest)); ?></span><?php endif; ?>
-                    </span>
-                </<?php echo $tag; ?>>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-</section>
-
-<!-- ============================ 5. JOIN THE TEAM ============================ -->
-<?php
-$join_cards = [
-    ['eyebrow' => 'Become a Preferred',     'title' => 'Vendor',              'img' => 'florida3.webp', 'url' => $gf('join_vendor_url',    home_url('/join'))],
-    ['eyebrow' => 'Become a Preferred',     'title' => 'Lender',              'img' => 'florida4.webp', 'url' => $gf('join_lender_url',    home_url('/join'))],
-    ['eyebrow' => 'Become Our Preferred',   'title' => 'Business Affiliate',  'img' => 'florida5.webp', 'url' => $gf('join_affiliate_url', home_url('/join'))],
-    ['eyebrow' => 'Partner With',           'title' => 'The Locals Group',    'img' => 'florida6.webp', 'url' => $gf('join_partner_url',   home_url('/join'))],
-];
-?>
-<section class="tlg tlg-join" data-reveal>
-    <h2 class="tlg-display tlg-join__title">Join The Team</h2>
-    <ul class="tlg-join__grid" data-reveal data-reveal-stagger="0.08">
-        <?php foreach ($join_cards as $c) : $img = locals_image_url(null, $c['img'], 'locals-card'); ?>
-            <li class="tlg-join__card">
-                <a href="<?php echo esc_url($c['url']); ?>">
-                    <span class="tlg-join__media"<?php echo $img ? ' style="background-image:url(\'' . esc_url($img) . '\');"' : ''; ?>></span>
-                    <span class="tlg-join__label">
-                        <span class="tlg-join__eyebrow"><?php echo esc_html($c['eyebrow']); ?></span>
-                        <span class="tlg-join__name tlg-display"><?php echo esc_html(strtoupper($c['title'])); ?></span>
-                    </span>
-                </a>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-    <p class="tlg-script tlg-tagline">Stronger Partnerships. Greater Impact. Lasting Success.</p>
-</section>
 
 <?php get_footer();
