@@ -266,7 +266,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-saga__phase--meet {
   min-height: 100vh;
   display: flex; align-items: center;
-  padding: calc(var(--nav-height) + 1rem) clamp(1rem, 2.5vw, 2rem) 2rem clamp(0.4rem, 0.8vw, 0.9rem);
+  padding: calc(var(--nav-height) + 1rem) clamp(1rem, 2.5vw, 2rem) 2rem 5vw;
 }
 /* Left scrim keeps the headline legible over the map. It extends well past the
    phase (height > 100vh) and feathers out via a vertical mask, so the darkening
@@ -616,9 +616,15 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   bottom: clamp(2rem, 9vh, 6rem);
   width: clamp(190px, 22vw, 330px);
   filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.5));
+  opacity: 0;                                                /* fly in when the section reveals */
+  transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.6s ease;
 }
-.tlg-cta--find { left:  clamp(2rem, 19vw, 23rem); transform: rotate(-3deg); }
-.tlg-cta--sell { right: clamp(2rem, 19vw, 23rem); transform: rotate(3deg); }
+/* Don't let [data-reveal] fade the whole composition — only the labels animate. */
+.tlg-saga__phase--action[data-reveal] { opacity: 1; transform: none; transition: none; }
+.tlg-cta--find { left:  clamp(2rem, 19vw, 23rem); transform: translateX(-2.5vw) rotate(-3deg); }
+.tlg-cta--sell { right: clamp(2rem, 19vw, 23rem); transform: translateX(2.5vw) rotate(3deg); }
+.tlg-saga__phase--action.is-revealed .tlg-cta--find { opacity: 1; transform: rotate(-3deg); }
+.tlg-saga__phase--action.is-revealed .tlg-cta--sell { opacity: 1; transform: rotate(3deg); }
 
 /* Tablet: agents are hidden (<=860px) so let the labels close in on the badge. */
 @media (max-width: 860px) {
@@ -788,13 +794,14 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 
 /* Our Locals cards + the wave scrollytelling region. Tall enough for the wave to start
    low and still have scrub room; background2 fills the whole section (no dark gap). */
-.tlg-paint--fall { position: relative; overflow: clip; min-height: 320vh; }
+.tlg-paint--fall { position: relative; overflow: clip; min-height: 340vh; }   /* +20vh of tan */
 .tlg-paint__fall-bg {
   position: absolute; inset: 0; z-index: 0;
   background-image: var(--bg2);
   background-position: left top;        /* top-left anchor */
   background-size: 100% auto;           /* same horizontal scale as background1 → seam lines up */
   background-repeat: no-repeat;
+  background-color: #f9e99c;            /* tan continues below the image (no dark teal gap) */
 }
 
 /* Wave: a sticky stage holding BACKGROUND content (behind the frames, shows through their
@@ -898,7 +905,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   overflow-x: auto; overflow-y: hidden;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
-  padding: 0.5rem var(--gutter) 1.25rem 5vw;   /* lead-in before the first card */
+  padding: 0.5rem var(--gutter) 1.25rem 0;
   scrollbar-width: none;                       /* Firefox — hide scrollbar */
   -ms-overflow-style: none;                    /* legacy Edge */
 }
@@ -909,6 +916,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   display: flex; gap: 1rem; width: max-content;
 }
 .tlg-card { flex: 0 0 auto; width: clamp(180px, 21vw, 260px); scroll-snap-align: start; }
+.tlg-card:first-child { margin-left: 6vw; }   /* reliable lead-in before the first card */
 .tlg-card__link {
   position: relative; display: block;
   aspect-ratio: 3 / 5; border-radius: 12px; overflow: hidden;
@@ -954,6 +962,38 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 @media (prefers-reduced-motion: reduce) {
   .tlg-paint__frame:last-child { --reveal: 116; }  /* show the finished painting */
   .tlg-paint__brush-frame:last-child { --reveal: 116; }
+}
+
+/* ============================ Mobile — hide heavy / overlapping content ============================
+   On phones the elaborate composited layers (realtor cutouts, brush, phone mock) collide and
+   become unusable, so we drop the decoration and keep the actual copy/cards readable. */
+@media (max-width: 768px) {
+  /* MEET: drop the realtor cluster + circle brush; let the hero copy breathe. */
+  .tlg-hero__cluster,
+  .tlg-hero__circlebrush { display: none; }
+  .tlg-saga__phase--meet { padding-left: var(--gutter); }
+
+  /* Paint scene: hide the phone + brush overlays. */
+  .tlg-paint__fg--1,
+  .tlg-paint__fg--2 { display: none; }
+
+  /* Stay In Touch copy → a single, centred, readable column. */
+  .tlg-paint__cell--lead,
+  .tlg-paint__cell--tail,
+  .tlg-paint__copy-pad,
+  .tlg-paint__copy-fill { display: none; }
+  .tlg-paint__fg--text { align-items: center; }
+  .tlg-paint__copy { flex: 1 1 100%; padding: 0 var(--gutter); gap: 0.5rem; justify-content: center; }
+  .tlg-paint__brand { height: auto; }
+  .tlg-paint__brand-name { font-size: 15vw; }
+  .tlg-paint__brand-the,
+  .tlg-paint__brand-group { font-size: 3.6vw; }
+  .tlg-paint__title2 { height: auto; font-size: clamp(2.8rem, 15vw, 5rem); line-height: 0.95; margin: 0.15em 0; }
+  .tlg-paint__learn { height: auto; font-size: 6vw; margin: 0.2em 0; }
+  .tlg-paint__copy-body { transform: none; max-width: 100%; font-size: 1rem; }
+
+  /* Card scrollbox: trim the big lead-in on small screens. */
+  .tlg-card:first-child { margin-left: var(--gutter); }
 }
 
 /* ============================ 3. STAY IN TOUCH ============================ */
@@ -1120,6 +1160,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   text-align: center;
   color: var(--tlg-ink);
   margin: 0 0 clamp(2rem, 4vw, 3rem);
+  text-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
 }
 .tlg-join__grid {
   list-style: none; margin: 0; padding: 0;
@@ -1132,6 +1173,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   border: 1px solid rgba(200, 162, 74, 0.75);     /* gold border */
   border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 .tlg-join__card a:hover {

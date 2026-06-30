@@ -129,7 +129,7 @@ $seller = $pick(6);
         </div>
 
         <!-- Phase B — Find / Get Approved / Sell -->
-        <div class="tlg-saga__phase tlg-saga__phase--action">
+        <div class="tlg-saga__phase tlg-saga__phase--action" data-reveal>
             <div class="tlg-action__photo" aria-hidden="true" style="--photo:url('<?php echo esc_url("$img_dir/state-card-south-carolina.jpg"); ?>');"></div>
             <div class="tlg-action__brushes" aria-hidden="true">
                 <?php for ($b = 1; $b <= 5; $b++) : ?>
@@ -289,11 +289,12 @@ $wave_slots  = array_map(fn($u) => $wave_uidx[$u], $wave_frames);
             <?php endforeach; ?>
             <!-- IN FRONT of the wave — the Join the Team grid, smashed in once the wave covers the screen. -->
             <?php
+            $join_mail = 'mailto:info@thelocalslifestyles.com';
             $join_cards = [
-                ['eyebrow' => 'Become a Preferred',   'title' => 'Vendor',             'img' => 'florida3.webp', 'url' => $gf('join_vendor_url',    home_url('/join'))],
-                ['eyebrow' => 'Become a Preferred',   'title' => 'Lender',             'img' => 'florida4.webp', 'url' => $gf('join_lender_url',    home_url('/join'))],
-                ['eyebrow' => 'Become Our Preferred', 'title' => 'Business Affiliate', 'img' => 'florida5.webp', 'url' => $gf('join_affiliate_url', home_url('/join'))],
-                ['eyebrow' => 'Partner With',         'title' => 'The Locals Group',   'img' => 'florida6.webp', 'url' => $gf('join_partner_url',   home_url('/join'))],
+                ['eyebrow' => 'Become a Preferred',   'title' => 'Vendor',             'img' => 'florida3.webp', 'url' => $join_mail],
+                ['eyebrow' => 'Become a Preferred',   'title' => 'Lender',             'img' => 'florida4.webp', 'url' => $join_mail],
+                ['eyebrow' => 'Become Our Preferred', 'title' => 'Business Affiliate', 'img' => 'florida5.webp', 'url' => $join_mail],
+                ['eyebrow' => 'Partner With',         'title' => 'The Locals Group',   'img' => 'florida6.webp', 'url' => $join_mail],
             ];
             ?>
             <div class="tlg-paint__wave-front" data-wave-front>
