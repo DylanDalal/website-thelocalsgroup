@@ -164,14 +164,15 @@ $seller = $pick(6);
     </div>
 </section>
 
-<!-- ====== 2b. GET APPROVED — PAINTED SCENES (background1 flipbook → background2) ======
-     Three stacked sections sharing two backdrops that meet at a single seam:
+<!-- ====== 2b. GET APPROVED — PAINTED SCENES (background1 flipbook → background2 + wave) ======
+     A 300vh trio:
        · Section 1 — a 100vh "scene" on background1-1…4. As it scrolls into view the
-         four frames flip 1→4 so a brush stroke paints itself across the skyline.
-         The frames scale from their BOTTOM edge, pinning the edge that meets the seam.
-       · Sections 2 & 3 — content blocks over the tall background2.jpg, which scales
-         from its TOP edge, so the paint streaks flow on out of section 1 and the
-         shared seam never drifts. Behaviour lives in home.js (bootPaintScene). -->
+         four frames flip 1→4 (a brush stroke paints itself across the skyline), under
+         foreground layers (phone / brush) that share one bottom origin so they stack
+         identically on every screen size. (bootPaintScene)
+       · Sections 2 & 3 — a 200vh region over the tall background2.jpg. A sticky
+         WebP wave sequence (alpha) starts pinning 150vh into the trio and is scrubbed
+         frame-by-frame by scroll. (bootWaveScrub) -->
 <section class="tlg tlg-paint tlg-paint--scene" data-paint-scene aria-label="Get approved">
     <div class="tlg-paint__frames" aria-hidden="true">
         <?php for ($i = 1; $i <= 4; $i++) : ?>
@@ -190,29 +191,94 @@ $seller = $pick(6);
     <div class="tlg-paint__fg tlg-paint__fg--2" aria-hidden="true">
         <div class="tlg-paint__cell tlg-paint__cell--spacer"></div>
         <div class="tlg-paint__cell tlg-paint__cell--brush">
-            <img src="<?php echo esc_url("$img_dir/brush1.webp"); ?>" alt="" loading="lazy" decoding="async">
+            <?php
+            // Brush animation frames (WebP, alpha) cycled by scroll once the
+            // background1 flip completes — see bootPaintScene in home.js.
+            $brush_frames = [];
+            foreach (glob(LOCALS_REALTY_DIR . '/assets/images/brushes/*.webp') as $bf) {
+                $brush_frames[] = "$img_dir/brushes/" . basename($bf);
+            }
+            sort($brush_frames);
+            $brush_first = $brush_frames ? $brush_frames[0] : "$img_dir/brushes/brush1.webp";
+            ?>
+            <img class="tlg-paint__brush" data-brush-frames
+                 data-frames="<?php echo esc_attr(wp_json_encode($brush_frames)); ?>"
+                 src="<?php echo esc_url($brush_first); ?>" alt="" loading="lazy" decoding="async">
         </div>
         <div class="tlg-paint__cell tlg-paint__cell--rest"></div>
     </div>
 </section>
 
+<?php
+// Wave frame sequence (WebP with alpha) in assets/images/sequence. Duplicate frames
+// were dropped but the numbering kept, so a gap means "hold the previous frame": we
+// expand the numbers back into a flat per-slot list and let home.js scrub through it.
+$wave_seq = [];
+foreach (glob(LOCALS_REALTY_DIR . '/assets/images/sequence/*.webp') as $f) {
+    if (preg_match('/(\d+)\.webp$/', basename($f), $m)) {
+        $wave_seq[(int) $m[1]] = "$img_dir/sequence/" . basename($f);
+    }
+}
+ksort($wave_seq);
+$wave_frames = [];
+if ($wave_seq) {
+    $cur = reset($wave_seq);
+    for ($n = min(array_keys($wave_seq)); $n <= max(array_keys($wave_seq)); $n++) {
+        if (isset($wave_seq[$n])) { $cur = $wave_seq[$n]; }
+        $wave_frames[] = $cur;   // held across the dropped-duplicate gaps
+    }
+}
+?>
 <section class="tlg tlg-paint tlg-paint--fall" data-paint-fall
          style="--bg2:url('<?php echo esc_url("$img_dir/background2.jpg"); ?>');">
     <div class="tlg-paint__fall-bg" aria-hidden="true"></div>
 
-    <!-- Section 2 — content block A (placeholder copy; swap in real content) -->
+    <?php if ($wave_frames) : ?>
+    <!-- Wave foreground: a sticky WebP frame sequence (alpha) scrubbed by scroll.
+         Pins 50vh into this section (= 150vh into the trio) and runs to the end. -->
+    <div class="tlg-paint__wave" data-wave-track aria-hidden="true">
+        <img class="tlg-paint__wave-frame" data-wave-frames
+             data-frames="<?php echo esc_attr(wp_json_encode($wave_frames)); ?>"
+             src="<?php echo esc_url($wave_frames[0]); ?>" alt="" decoding="async">
+    </div>
+    <?php endif; ?>
+
+    <!-- Section 2 — realtor cards in a horizontal scrollbox -->
     <div class="tlg-paint__block tlg-paint__block--a" data-reveal>
-        <p class="tlg-script tlg-paint__kicker">Section two</p>
-        <h2 class="tlg-display tlg-paint__title">Placeholder headline</h2>
-        <p class="tlg-paint__body">Placeholder copy for the second section — replace this with the real message that belongs over background2.</p>
+        <h2 class="tlg-display tlg-paint__cards-title">Our Locals</h2>
+        <div class="tlg-cards" data-cards tabindex="0" role="group" aria-label="Our local agents">
+            <ul class="tlg-cards__track">
+                <?php
+                $cards = array_slice($roster, 0, 12);
+                foreach ($cards as $ci => $a) :
+                    $first = explode(' ', $a['name'])[0];
+                    $rest  = trim(substr($a['name'], strlen($first)));
+                    $tag   = $a['url'] && $a['url'] !== '#' ? 'a' : 'div';
+                    $bg    = locals_image_url(null, 'florida' . (($ci % 6) + 1) . '.webp', 'locals-card');
+                ?>
+                    <li class="tlg-card">
+                        <<?php echo $tag; ?> class="tlg-card__link"<?php echo $tag === 'a' ? ' href="' . esc_url($a['url']) . '"' : ''; ?>>
+                            <span class="tlg-card__bg"<?php echo $bg ? ' style="background-image:url(\'' . esc_url($bg) . '\');"' : ''; ?>></span>
+                            <span class="tlg-card__name tlg-display" aria-hidden="true">
+                                <span class="tlg-card__first"><?php echo esc_html(strtoupper($first)); ?></span>
+                                <?php if ($rest) : ?><span class="tlg-card__last"><?php echo esc_html(strtoupper($rest)); ?></span><?php endif; ?>
+                            </span>
+                            <span class="tlg-card__photo"><img src="<?php echo esc_url($a['img']); ?>" alt="<?php echo esc_attr($a['name']); ?>" loading="lazy" decoding="async"></span>
+                        </<?php echo $tag; ?>>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
     </div>
 
-    <!-- Section 3 — content block B (placeholder copy; swap in real content) -->
-    <div class="tlg-paint__block tlg-paint__block--b" data-reveal>
-        <p class="tlg-script tlg-paint__kicker">Section three</p>
-        <h2 class="tlg-display tlg-paint__title">Placeholder headline</h2>
-        <p class="tlg-paint__body">Placeholder copy for the third section — replace this with the real message and call to action.</p>
-        <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_approve); ?>">Get approved</a>
+    <!-- Section 3 — its own 100vh block. -->
+    <div class="tlg-paint__final">
+        <div class="tlg-paint__block tlg-paint__block--b" data-reveal>
+            <p class="tlg-script tlg-paint__kicker">Section three</p>
+            <h2 class="tlg-display tlg-paint__title">Placeholder headline</h2>
+            <p class="tlg-paint__body">Placeholder copy for the third section — replace this with the real message and call to action.</p>
+            <a class="tlg-btn tlg-btn--gold" href="<?php echo esc_url($cta_approve); ?>">Get approved</a>
+        </div>
     </div>
 </section>
 

@@ -630,13 +630,25 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 }
 
 /* ============================ 2b. GET APPROVED — PAINTED SCENES ============================
-   Section 1 is a 100vh "scene": four stacked frames (background1-1…4) flip 1→4 as
-   the section scrolls into view (bootPaintScene in home.js), so a brush stroke
-   paints itself across the skyline. Sections 2 & 3 sit on the tall background2.jpg
-   below. The two images line up at one seam — the frames scale from their BOTTOM
-   edge and background2 from its TOP edge, so that shared edge stays pinned while
-   either layer scales. */
+   A 300vh trio:
+     · Section 1 — a 100vh "scene": four stacked frames (background1-1…4) flip 1→4 as
+       the section scrolls into view (bootPaintScene in home.js), under foreground
+       layers (phone / brush). Every layer shares one transform-origin and is sized
+       by viewport WIDTH and anchored to the BOTTOM, so the uploaded images stack and
+       line up identically on all screen sizes.
+     · Sections 2 & 3 — a 200vh region over the tall background2.jpg. A sticky WebP
+       wave sequence (alpha) starts pinning 150vh into the trio and is scrubbed
+       frame-by-frame by scroll (bootWaveScrub in home.js). */
 .tlg-paint { position: relative; isolation: isolate; }
+
+/* Shared anchor — same transform-origin (and bottom alignment) on every layer so
+   the stacked images register against each other at any viewport size. */
+.tlg-paint__frame,
+.tlg-paint__fg,
+.tlg-paint__cell,
+.tlg-paint__fall-bg,
+.tlg-paint__wave-frame,
+.tlg-paint__final { transform-origin: center bottom; }
 
 /* Section 1 — flipbook scene -------------------------------------------------*/
 .tlg-paint--scene { min-height: 100vh; overflow: hidden; }
@@ -652,14 +664,14 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 /* First frame shows the base scene before JS takes over / if it never does. */
 .tlg-paint__frame:first-child { opacity: 1; }
 
-/* Foreground layers — full-bleed rows stacked over the scene -----------------*/
+/* Foreground layers — full-bleed rows stacked over the scene. Images are scaled by
+   width and pinned to the bottom so the layers register on all screen sizes. */
 .tlg-paint__fg {
   position: absolute; inset: 0; z-index: 2;
-  display: flex; gap: 0;
+  display: flex; gap: 0; align-items: flex-end;
   pointer-events: none;
 }
-.tlg-paint__cell { height: 100%; }
-.tlg-paint__fg img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.tlg-paint__fg img { display: block; width: 100%; height: auto; }
 /* Layer 1 — 33vw / 67vw */
 .tlg-paint__cell--phone { flex: 0 0 33vw; padding: 30px; }
 .tlg-paint__cell--right { flex: 0 0 67vw; }
@@ -669,7 +681,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-paint__cell--rest   { flex: 1 1 auto; }
 
 /* Sections 2 & 3 — over the tall background2 ---------------------------------*/
-.tlg-paint--fall { overflow: hidden; }
+.tlg-paint--fall { position: relative; overflow: clip; }
 .tlg-paint__fall-bg {
   position: absolute; inset: 0; z-index: 0;
   background-image: var(--bg2);
@@ -677,6 +689,23 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   background-size: cover;
   background-repeat: no-repeat;
 }
+
+/* Wave scrub: a 150vh track (the back half of the trio) whose sticky frame pins to
+   the viewport while the track scrolls past, so scroll scrubs the WebP sequence.
+   Begins 50vh into this section = 150vh into the trio. The frames carry alpha, so
+   the wave composites over background2 (no fill behind it). */
+.tlg-paint__wave {
+  position: absolute; left: 0; right: 0; z-index: 1;
+  top: 50vh; height: 150vh;
+  pointer-events: none;
+}
+.tlg-paint__wave-frame {
+  position: sticky; top: 0;
+  display: block; width: 100%; height: 100vh;
+  object-fit: cover; object-position: center bottom;
+}
+
+/* Section 2 content sits above the wave; section 3 is its own 100vh block. */
 .tlg-paint__block {
   position: relative; z-index: 2;
   max-width: 62ch;
@@ -685,10 +714,80 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   text-align: center;
   text-shadow: 0 2px 22px rgba(3, 12, 13, 0.55);
 }
-.tlg-paint__block--a { padding-top: clamp(8rem, 28vh, 18rem); }  /* clear the paint streaks running down from the seam */
-.tlg-paint__block--b { padding-bottom: clamp(6rem, 18vh, 12rem); }
+.tlg-paint__block--a {
+  min-height: 100vh;                              /* trio 100–200vh */
+  max-width: none;                                /* let the card rail run wide */
+  padding-left: 0; padding-right: 0;
+  padding-top: clamp(8rem, 28vh, 18rem);          /* clear the paint streaks from the seam */
+}
+.tlg-paint__final {
+  position: relative; z-index: 2;
+  min-height: 100vh;                              /* trio 200–300vh */
+  display: grid; align-content: center;
+}
 .tlg-paint__body { margin-top: 1rem; color: var(--tlg-muted); font-size: 1.05rem; line-height: 1.7; }
 .tlg-paint__block .tlg-btn { margin-top: 1.6rem; }
+
+/* Section 2 — realtor cards in a horizontal scrollbox -----------------------*/
+.tlg-paint__cards-title {
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  color: var(--tlg-ink);
+  margin: 0 0 clamp(1.5rem, 3vw, 2.5rem);
+  padding-inline: var(--gutter);
+  text-align: center;
+  text-shadow: 0 2px 22px rgba(3, 12, 13, 0.55);
+}
+.tlg-cards {
+  overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.5rem var(--gutter) 1.25rem;
+  scrollbar-color: rgba(200, 162, 74, 0.55) transparent;
+  scrollbar-width: thin;
+}
+.tlg-cards::-webkit-scrollbar { height: 8px; }
+.tlg-cards::-webkit-scrollbar-thumb { background: rgba(200, 162, 74, 0.5); border-radius: 99px; }
+.tlg-cards:focus-visible { outline: 2px solid var(--tlg-gold-hi); outline-offset: 4px; border-radius: 12px; }
+.tlg-cards__track {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; gap: 1rem; width: max-content;
+}
+.tlg-card { flex: 0 0 auto; width: clamp(180px, 21vw, 260px); scroll-snap-align: start; }
+.tlg-card__link {
+  position: relative; display: block;
+  aspect-ratio: 3 / 5; border-radius: 12px; overflow: hidden;
+  border: 1px solid rgba(200, 162, 74, 0.55);
+  background: var(--tlg-panel);
+}
+.tlg-card__bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  opacity: 0.55; filter: brightness(0.62) saturate(0.85);
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.tlg-card__link::after {                          /* readability gradient */
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(180deg, rgba(7, 25, 27, 0.25) 0%, rgba(7, 25, 27, 0.7) 100%);
+}
+.tlg-card__name {
+  position: absolute; inset: 0.7rem 0.6rem auto; z-index: 2;
+  text-align: left;
+  font-size: clamp(1.35rem, 2.2vw, 2rem); line-height: 0.9;
+}
+.tlg-card__name span { display: block; }
+.tlg-card__first { color: rgba(244, 236, 216, 0.92); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55); }
+.tlg-card__last  { color: rgba(244, 236, 216, 0.22); }
+.tlg-card__photo {
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.tlg-card__photo img {
+  width: 100%; height: 90%;
+  object-fit: contain; object-position: bottom;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.45));
+}
+.tlg-card__link:hover .tlg-card__bg { transform: scale(1.06); }
+.tlg-card__link:hover .tlg-card__last { color: var(--tlg-gold-hi); }
 
 @media (max-width: 560px) { .tlg-paint--scene { min-height: 82vh; } }
 @media (prefers-reduced-motion: reduce) {
