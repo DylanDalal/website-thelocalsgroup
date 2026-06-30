@@ -145,10 +145,10 @@
         phone.style.transform = 'rotate(' + pr.toFixed(2) + 'deg) scale(' + ps.toFixed(3) + ')';
       }
 
-      // Background flip — triggers as the section appears and finishes fast. Each new
-      // frame is wiped in top→bottom via --reveal, eased with smoothstep so the paint
-      // flows on rather than pops.
-      var flipStart = vh * 0.92, flipDist = vh * 0.18;
+      // Background flip — keyed to the scene's top edge (px): the paint wipes in as the
+      // scene scrolls up from `flipStart` (top near the viewport bottom) over `flipDist`.
+      // A wider window than before so it reliably completes on tall/large screens.
+      var flipStart = vh * 0.95, flipDist = vh * 0.42;
       if (frames.length) {
         var progress = Math.min(1, Math.max(0, (flipStart - top) / flipDist));
         var total = frames.length;
@@ -167,7 +167,7 @@
       // Brush wipe — five states (empty → 1 → 2 → 3 → 4). Begins where the flip ends
       // and starts empty; each frame wipes in top→bottom over the one before it.
       if (bFrames.length) {
-        var bp = Math.min(1, Math.max(0, ((flipStart - flipDist) - top) / (vh * 0.28)));
+        var bp = Math.min(1, Math.max(0, ((flipStart - flipDist) - top) / (vh * 0.4)));
         var bTotal = bFrames.length;
         var bf = bp * bTotal;                 // 0..total; floor() = the frame wiping in
         var bFloor = Math.floor(bf);
@@ -188,77 +188,87 @@
   }
 
   // ---- Wave scrub (background2 foreground) ----
-  // A WebP frame sequence (alpha) pinned via CSS position:sticky inside
-  // [data-wave-track] (which spans the whole 330vh section). The flat frame list
-  // (held duplicates already expanded in PHP) is mapped to scroll over a sub-window
-  // of the section, so the wave starts farther down and holds its last frame for a
-  // long tail. Frames are preloaded, and we only ever show a frame that has finished
-  // decoding — until the exact one is ready we hold the nearest decoded frame, so a
-  // fast scroll never lands on a blank.
+  // All unique frames are stacked (CSS, opacity 0) inside the sticky [data-wave-track].
+  // Scrubbing only toggles opacity — no img.src swap — so there is no per-frame decode
+  // stutter. Frames are loaded PROGRESSIVELY as the user scrolls toward the wave (plus a
+  // slow idle drip), and we only ever reveal a decoded frame (nearest-loaded fallback).
   function bootWaveScrub() {
     var track = document.querySelector('[data-wave-track]');
-    var img = document.querySelector('[data-wave-frames]');
-    if (!track || !img) return;
-
-    var frames;
-    try { frames = JSON.parse(img.getAttribute('data-frames') || '[]'); }
-    catch (e) { frames = []; }
+    if (!track) return;
+    var frames = Array.prototype.slice.call(track.querySelectorAll('.tlg-paint__wave-frame'));
     if (!frames.length) return;
-    frames = frames.map(function (src) { return encodeURI(src); });
+
+    var slots;
+    try { slots = JSON.parse(track.getAttribute('data-slots') || '[]'); }
+    catch (e) { slots = []; }
+    if (!slots.length) slots = frames.map(function (_, i) { return i; });
 
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var ready = {};            // url -> true once fully decoded
-    var ticking = false, shown = 0;
+    var total = frames.length;
+    var loaded = frames.map(function (f) { return !!(f.complete && f.naturalWidth > 0); });
+    var ticking = false, shown = 0, nextLoad = 0;
 
     function refresh() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
 
-    // Preload unique frames; mark each ready (and re-evaluate) as it lands.
-    var loaders = {};
-    frames.forEach(function (src) {
-      if (loaders[src]) return;
-      var im = new Image();
-      loaders[src] = im;
-      im.decoding = 'async';
-      im.onload = function () { ready[src] = true; refresh(); };
-      im.src = src;
-      if (im.complete && im.naturalWidth > 0) ready[src] = true;
-    });
-    // The first frame is already in the DOM <img> from PHP.
-    if (img.complete && img.naturalWidth > 0) ready[frames[0]] = true;
+    // Assign src to frames 0..n (in order) so they decode ahead of being shown.
+    function loadUpTo(n) {
+      while (nextLoad <= n && nextLoad < total) {
+        var f = frames[nextLoad];
+        if (!f.getAttribute('src') && f.getAttribute('data-src')) {
+          (function (idx, el) {
+            el.addEventListener('load', function () { loaded[idx] = true; refresh(); });
+            el.src = el.getAttribute('data-src');
+          })(nextLoad, f);
+        } else if (f.complete && f.naturalWidth > 0) { loaded[nextLoad] = true; }
+        nextLoad++;
+      }
+    }
 
-    // Nearest decoded frame to index i (prefer i, then fan outward).
-    function nearestReady(i) {
-      if (ready[frames[i]]) return i;
-      for (var d = 1; d < frames.length; d++) {
-        if (i - d >= 0 && ready[frames[i - d]]) return i - d;
-        if (i + d < frames.length && ready[frames[i + d]]) return i + d;
+    function nearestLoaded(i) {
+      if (loaded[i]) return i;
+      for (var d = 1; d < total; d++) {
+        if (i - d >= 0 && loaded[i - d]) return i - d;
+        if (i + d < total && loaded[i + d]) return i + d;
       }
       return shown;            // nothing ready yet — keep whatever is on screen
     }
-
-    function targetIndex() {
-      if (reduce) return frames.length - 1;   // rest on the final frame
-      // raw = 0..1 across the section's pinned span (its height minus one viewport).
-      var rect = track.getBoundingClientRect();
-      var pinned = Math.max(1, track.offsetHeight - window.innerHeight);
-      var raw = Math.min(1, Math.max(0, -rect.top / pinned));
-      // Begin the scrub almost immediately (little freeze on frame 0), run it to END,
-      // then sit on the last frame for the rest — a long tail.
-      var START = 0.04, END = 0.6;
-      var progress = Math.min(1, Math.max(0, (raw - START) / (END - START)));
-      return Math.round(progress * (frames.length - 1));
+    function show(i) {
+      if (i === shown) return;
+      frames[shown].style.opacity = '0';
+      frames[i].style.opacity = '1';
+      shown = i;
     }
 
     function update() {
       ticking = false;
-      var i = nearestReady(targetIndex());
-      if (i !== shown) { shown = i; img.src = frames[i]; }
+      var vh = window.innerHeight;
+      var rect = track.getBoundingClientRect();
+
+      // Progressive preload: how far are we (0→1) from page top to the wave appearing?
+      var trackTopDoc = rect.top + window.pageYOffset;
+      var loadFrac = Math.min(1, Math.max(0, window.pageYOffset / Math.max(1, trackTopDoc - vh)));
+      loadUpTo(Math.ceil(loadFrac * (total - 1)));
+
+      var u;
+      if (reduce) {
+        u = total - 1;                       // rest on the final frame
+      } else {
+        var pinned = Math.max(1, track.offsetHeight - vh);
+        var raw = Math.min(1, Math.max(0, -rect.top / pinned));
+        var START = 0.04, END = 0.6;         // small freeze, scrub, long last-frame tail
+        var p = Math.min(1, Math.max(0, (raw - START) / (END - START)));
+        u = slots[Math.round(p * (slots.length - 1))];
+      }
+      show(nearestLoaded(u));
     }
 
-    if (!reduce) {
-      window.addEventListener('scroll', refresh, { passive: true });
-      window.addEventListener('resize', refresh, { passive: true });
-    }
+    window.addEventListener('scroll', refresh, { passive: true });
+    window.addEventListener('resize', refresh, { passive: true });
+    // Slow idle drip so even an idle user has every frame ready before they reach it.
+    var drip = setInterval(function () {
+      loadUpTo(nextLoad);
+      if (nextLoad >= total) clearInterval(drip);
+    }, 350);
     update();
   }
 

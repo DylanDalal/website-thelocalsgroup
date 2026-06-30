@@ -233,11 +233,10 @@ $seller = $pick(6);
                 <svg class="tlg-paint__pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
                 <span>Learn the<br>Area</span>
             </p>
-            <!-- Leading spaces shape the left edge to the brush curve (tune to taste). -->
             <p class="tlg-paint__copy-body">Get local updates,<br>
-                &nbsp;&nbsp;market insight, and<br>
-                &nbsp;&nbsp;&nbsp;community connection<br>
-                &nbsp;from The Locals Group.</p>
+                market insight, and<br>
+                community connection<br>
+                from The Locals Group.</p>
             <div class="tlg-paint__copy-fill"></div>
         </div>
         <div class="tlg-paint__cell tlg-paint__cell--tail"></div>
@@ -263,22 +262,25 @@ if ($wave_seq) {
         $wave_frames[] = $cur;   // held across the dropped-duplicate gaps
     }
 }
+// Unique frames (stacked, opacity-toggled) + a per-scroll-slot index into them.
+$wave_unique = array_values(array_unique($wave_frames));
+$wave_uidx   = array_flip($wave_unique);
+$wave_slots  = array_map(fn($u) => $wave_uidx[$u], $wave_frames);
 ?>
-<?php /* Warm the wave frames early (parser-discovered, before the footer JS preloads). */ ?>
-<?php foreach (array_unique($wave_frames) as $wf) : ?>
-<link rel="preload" as="image" href="<?php echo esc_url($wf); ?>" type="image/webp" fetchpriority="low">
-<?php endforeach; ?>
 <section class="tlg tlg-paint tlg-paint--fall" data-paint-fall
          style="--bg2:url('<?php echo esc_url("$img_dir/background2.jpg"); ?>');">
     <div class="tlg-paint__fall-bg" aria-hidden="true"></div>
 
-    <?php if ($wave_frames) : ?>
-    <!-- Wave foreground: a sticky WebP frame sequence (alpha) scrubbed by scroll.
-         Pins 50vh into this section (= 150vh into the trio) and runs to the end. -->
-    <div class="tlg-paint__wave" data-wave-track aria-hidden="true">
-        <img class="tlg-paint__wave-frame" data-wave-frames
-             data-frames="<?php echo esc_attr(wp_json_encode($wave_frames)); ?>"
-             src="<?php echo esc_url($wave_frames[0]); ?>" alt="" decoding="async">
+    <?php if ($wave_unique) : ?>
+    <!-- Wave foreground: all frames stacked (alpha), preloaded progressively as you scroll
+         toward them; scrubbing toggles opacity (no src swap), so no decode stutter. -->
+    <div class="tlg-paint__wave" data-wave-track aria-hidden="true"
+         data-slots="<?php echo esc_attr(wp_json_encode($wave_slots)); ?>">
+        <div class="tlg-paint__wave-sticky">
+            <?php foreach ($wave_unique as $ui => $uurl) : ?>
+                <img class="tlg-paint__wave-frame" data-src="<?php echo esc_url($uurl); ?>"<?php echo $ui === 0 ? ' src="' . esc_url($uurl) . '"' : ''; ?> alt="" decoding="async">
+            <?php endforeach; ?>
+        </div>
     </div>
     <?php endif; ?>
 
@@ -289,11 +291,17 @@ if ($wave_seq) {
             <ul class="tlg-cards__track">
                 <?php
                 $cards = array_slice($roster, 0, 12);
+                // Luxury-interior backdrops sourced from Unsplash (assets/images/locals-bg).
+                $card_bgs = array_map(
+                    fn($f) => "$img_dir/locals-bg/" . basename($f),
+                    glob(LOCALS_REALTY_DIR . '/assets/images/locals-bg/*.jpg') ?: []
+                );
+                sort($card_bgs);
                 foreach ($cards as $ci => $a) :
                     $first = explode(' ', $a['name'])[0];
                     $rest  = trim(substr($a['name'], strlen($first)));
                     $tag   = $a['url'] && $a['url'] !== '#' ? 'a' : 'div';
-                    $bg    = locals_image_url(null, 'florida' . (($ci % 6) + 1) . '.webp', 'locals-card');
+                    $bg    = $card_bgs ? $card_bgs[$ci % count($card_bgs)] : '';
                 ?>
                     <li class="tlg-card">
                         <<?php echo $tag; ?> class="tlg-card__link"<?php echo $tag === 'a' ? ' href="' . esc_url($a['url']) . '"' : ''; ?>>
@@ -310,7 +318,7 @@ if ($wave_seq) {
         </div>
     </div>
 
-    <!-- Section 3 — its own 100vh block. -->
+    <!-- Section 3 — content below Our Locals. -->
     <div class="tlg-paint__final">
         <div class="tlg-paint__block tlg-paint__block--b" data-reveal>
             <p class="tlg-script tlg-paint__kicker">Section three</p>
@@ -320,6 +328,9 @@ if ($wave_seq) {
         </div>
     </div>
 </section>
+
+<!-- 50vh cream band, below background2.jpg in the document. -->
+<section class="tlg tlg-cream" aria-hidden="true"></section>
 
 <!-- ============================ 3. STAY IN TOUCH / LEARN THE AREA ============================ -->
 <section class="tlg tlg-touch" data-reveal>

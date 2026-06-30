@@ -5,6 +5,7 @@
  * Graphic treatments (gold foil, map texture, torn/arrow CTAs, phone frame)
  * are recreated in CSS; swap in real art/photography via ACF when available.
  * ==========================================================================*/
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap");
 
 body.home {
   --tlg-bg:      #0b2522;   /* deep teal/navy */
@@ -363,11 +364,12 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   margin: 0;
   color: #fff;
   text-shadow: 0 2px 30px rgba(0, 0, 0, 0.35);
+  transform: scaleX(0.9); transform-origin: left;   /* 90% letter width */
 }
 .tlg-hero__divider {
-  width: 72px; height: 3px; border: 0;
-  margin: 1.5rem 0;
-  background: linear-gradient(90deg, var(--tlg-gold-hi), var(--tlg-gold-lo));
+  width: 190px; height: 54px; border: 0;     /* keeps goldbrush2.png's 468×134 ratio */
+  margin: 0.75rem 0 1.25rem;
+  background: url("../images/goldbrush2.png") left center / contain no-repeat;
 }
 .tlg-hero__lead {
   max-width: 46ch;
@@ -566,7 +568,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 }
 .tlg-action__agent--left  { left: 0; }
 .tlg-action__agent--right { right: 0; }
-@media (max-width: 860px) { .tlg-action__agent { display: none; } }
+@media (max-width: 980px) { .tlg-action__agent { display: none; } }
 
 /* Graphic CTA composition: GET APPROVED badge centred, FIND / SELL torn
    labels anchored to the bottom corners over each agent and pointing inward.
@@ -606,8 +608,6 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 }
 .tlg-cta--find { left:  clamp(2rem, 19vw, 23rem); transform: rotate(-3deg); }
 .tlg-cta--sell { right: clamp(2rem, 19vw, 23rem); transform: rotate(3deg); }
-.tlg-cta--find:hover { transform: rotate(-3deg) translateY(-4px); }
-.tlg-cta--sell:hover { transform: rotate(3deg) translateY(-4px); }
 
 /* Tablet: agents are hidden (<=860px) so let the labels close in on the badge. */
 @media (max-width: 860px) {
@@ -634,19 +634,21 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
    small in a sea of empty teal (agents flung to the far corners). Past 1440px we
    size everything with the viewport (vw/vh) and anchor the agents/labels to a
    centred band via calc(50% - …vw), so it scales up and stays cohesive. */
-@media (min-width: 1440px) {
-  .tlg-action__agent { width: 26vw; }
-  .tlg-action__agent--left  { left:  calc(50% - 38vw); }
-  .tlg-action__agent--right { right: calc(50% - 38vw); }
-  .tlg-action__brand .tlg-script { font-size: 4vw; }
-  .tlg-cta--approve { width: 30vw; }
+/* Cohesive centred-band layout from 1280px (covers common laptops, no dead-space gap),
+   with upper caps so the art doesn't get enormous on ultrawide. */
+@media (min-width: 1280px) {
+  .tlg-action__agent { width: clamp(360px, 26vw, 540px); }
+  .tlg-action__agent--left  { left:  clamp(0px, 50% - 38vw, 50% - 480px); }
+  .tlg-action__agent--right { right: clamp(0px, 50% - 38vw, 50% - 480px); }
+  .tlg-action__brand .tlg-script { font-size: clamp(2.5rem, 4vw, 5rem); }
+  .tlg-cta--approve { width: clamp(360px, 30vw, 600px); }
   .tlg-cta--find,
-  .tlg-cta--sell  { width: 22vw; bottom: 9vh; }
-  .tlg-cta--find  { left:  calc(50% - 33vw); }
-  .tlg-cta--sell  { right: calc(50% - 33vw); }
+  .tlg-cta--sell  { width: clamp(260px, 22vw, 440px); bottom: 9vh; }
+  .tlg-cta--find  { left:  clamp(2rem, 50% - 33vw, 50% - 420px); }
+  .tlg-cta--sell  { right: clamp(2rem, 50% - 33vw, 50% - 420px); }
 
   /* Realtor cards grow with the viewport too, instead of capping at 260px. */
-  .tlg-card { width: 18vw; }
+  .tlg-card { width: clamp(220px, 18vw, 360px); }
 }
 
 /* ============================ 2b. GET APPROVED — PAINTED SCENES ============================
@@ -675,7 +677,7 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-paint__frames { position: absolute; inset: 0; z-index: 0; }
 .tlg-paint__frame {
   position: absolute; inset: 0;
-  background-position: center bottom;   /* anchored to the seam edge */
+  background-position: left bottom;     /* left-anchored: fills the screen, crops the right */
   background-size: cover;
   background-repeat: no-repeat;
   /* Directional wipe: the paint in each frame is a superset of the one before, so
@@ -716,10 +718,12 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 }
 /* Layer 3 — Stay In Touch copy column: 13vw spacer / 20vw text / rest. */
 .tlg-paint__fg--text { align-items: stretch; }          /* full-height column, not bottom-aligned */
-.tlg-paint__cell--lead { flex: 0 0 26vw; }
+/* Lead tracks BOTH width and the phone's height-based size, so the copy never lands on
+   the phone on tall/laptop screens (26vw stays dominant on wide screens). */
+.tlg-paint__cell--lead { flex: 0 0 max(26vw, 48vh); }
 .tlg-paint__cell--tail { flex: 1 1 auto; }
 .tlg-paint__copy {
-  flex: 0 0 20vw;
+  flex: 0 0 max(20vw, 280px);                           /* floor so the column never starves */
   display: flex; flex-direction: column; gap: 2vh;      /* gap between content blocks */
   color: var(--tlg-ink);
   text-shadow: 0 2px 16px rgba(3, 12, 13, 0.5);
@@ -732,20 +736,27 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-paint__brand-name  { font-size: 4.2vw; line-height: 0.72; margin-left: 1.4vw; }
 .tlg-paint__brand-group { font-family: var(--tlg-display); font-weight: 700; font-size: 1vw; letter-spacing: 0.45em; margin-left: 6vw; }
 /* 3 — STAY IN TOUCH */
-.tlg-paint__title2 { height: 34vh; flex: none; margin: 0; font-size: 12.5vh; line-height: 0.9; color: var(--tlg-ink); }
+/* Headline tracks height but is capped to the column width so it can't overflow left
+   over the phone on narrow/tall viewports. */
+.tlg-paint__title2 { height: 34vh; flex: none; margin: 0; font-size: min(12.5vh, 6.8vw); line-height: 0.9; color: var(--tlg-ink); }
 /* 4 — Learn the Area — real teal brush image (brush2.png), white text, no translation */
 .tlg-paint__learn {
+  position: relative; isolation: isolate;
   height: 9vh; flex: none; margin: 0; width: fit-content;
   display: inline-flex; align-items: center; gap: 0.4em;
   padding: 0 2.6em 0 2em;
   color: #fff; text-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
   font-family: var(--tlg-display); font-weight: 800; font-style: italic;
   text-transform: uppercase; letter-spacing: 0.03em; font-size: 1.7vw; line-height: 1.05;
+}
+.tlg-paint__learn::before {        /* brush3, scaled 1.3× vertically */
+  content: ""; position: absolute; inset: 0; z-index: -1;
   background: url("../images/brush3.png") center / 100% 100% no-repeat;
+  transform: scaleY(1.3);
 }
 .tlg-paint__pin { width: 1em; height: 1em; fill: currentColor; flex: none; }
 /* 5 — body copy (black, shaped + shifted right to clear the phone/brush) */
-.tlg-paint__copy-body { margin: 0; flex: none; max-width: 22vw; transform: translateX(7vw); color: #000; text-shadow: none; line-height: 1.55; font-size: 1.3vw; }
+.tlg-paint__copy-body { margin: 0; flex: none; max-width: 100%; transform: translateX(-1vw); color: #000; font-weight: 700; text-shadow: none; line-height: 1.55; font-size: clamp(0.95rem, 1.3vw, 1.5rem); }
 
 /* Layer 1 — 33vw / 67vw */
 .tlg-paint__cell--phone { flex: 0 0 auto; padding: 30px; transform-origin: left center; }
@@ -766,11 +777,11 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 
 /* Sections 2 & 3 — over the tall background2. ~330vh tall so the sticky wave stays
    pinned the whole way through (scene 100vh + this = ~430vh total). */
-.tlg-paint--fall { position: relative; overflow: clip; min-height: 330vh; }
+.tlg-paint--fall { position: relative; overflow: clip; min-height: 200vh; }   /* = background2 height, no dark gap */
 .tlg-paint__fall-bg {
   position: absolute; top: 0; left: 0; right: 0; height: 200vh; z-index: 0;
   background-image: var(--bg2);
-  background-position: center top;      /* meets the scene's bottom edge */
+  background-position: left top;        /* left-anchored: fills the screen, crops the right */
   background-size: cover;
   background-repeat: no-repeat;
 }
@@ -781,16 +792,19 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
    wave composites over everything below it. */
 .tlg-paint__wave {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
-  top: 80vh;            /* begin the wave further down the section, not at its top */
+  top: 85vh;            /* moved ~35vh further down the document */
   pointer-events: none;
 }
+.tlg-paint__wave-sticky { position: sticky; top: 0; height: 100vh; }
+/* All frames stacked; scrub toggles opacity (no src swap). center top keeps the crest
+   + the image's transparent top edge in view, so the wave fades into the content above. */
 .tlg-paint__wave-frame {
-  position: sticky; top: 0;
-  display: block; width: 100%; height: 100vh;
-  /* center top keeps the crest + the image's transparent top edge in view, so the
-     wave fades into the content above instead of being hard-cut at the top. */
+  position: absolute; inset: 0;
+  display: block; width: 100%; height: 100%;
   object-fit: cover; object-position: center top;
+  opacity: 0;
 }
+.tlg-paint__wave-frame:first-child { opacity: 1; }
 
 /* Section 2 content sits above the wave; section 3 is its own 100vh block. */
 .tlg-paint__block {
@@ -802,16 +816,18 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   text-shadow: 0 2px 22px rgba(3, 12, 13, 0.55);
 }
 .tlg-paint__block--a {
-  min-height: 130vh;                              /* cards zone */
+  min-height: 100vh;                              /* cards zone */
   max-width: none;                                /* let the card rail run wide */
   padding-left: 0; padding-right: 0;
   padding-top: clamp(8rem, 28vh, 18rem);          /* clear the paint streaks from the seam */
 }
 .tlg-paint__final {
   position: relative; z-index: 2;
-  min-height: 200vh;                              /* section 3 zone (130 + 200 = 330vh) */
+  min-height: 100vh;                              /* section 3 zone (100 + 100 = 200vh) */
   display: grid; align-content: center;
 }
+/* 50vh cream band, below background2.jpg in the document. */
+.tlg-cream { height: 50vh; background: #f9e99c; }
 .tlg-paint__body { margin-top: 1rem; color: var(--tlg-muted); font-size: 1.05rem; line-height: 1.7; }
 .tlg-paint__block .tlg-btn { margin-top: 1.6rem; }
 
@@ -848,21 +864,24 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-card__bg {
   position: absolute; inset: 0;
   background-size: cover; background-position: center;
-  opacity: 0.55; filter: brightness(0.62) saturate(0.85);
+  opacity: 0.72; filter: brightness(0.7) saturate(0.92);
   transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .tlg-card__link::after {                          /* readability gradient */
   content: ""; position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(180deg, rgba(7, 25, 27, 0.25) 0%, rgba(7, 25, 27, 0.7) 100%);
+  background: linear-gradient(180deg, rgba(7, 25, 27, 0.45) 0%, rgba(7, 25, 27, 0.2) 40%, rgba(7, 25, 27, 0.55) 100%);
 }
+/* Names: condensed, centred, uniform sizes (one size fits every first name, one for
+   every last name) — first bright cream, last ghosted behind the figure. */
 .tlg-card__name {
-  position: absolute; inset: 0.7rem 0.6rem auto; z-index: 2;
-  text-align: left;
-  font-size: clamp(1.35rem, 2.2vw, 2rem); line-height: 0.9;
+  position: absolute; inset: 1.1rem 0.3rem auto; z-index: 2;
+  text-align: center;
+  font-family: "Oswald", "Archivo Narrow", "Arial Narrow", var(--tlg-display);
+  font-weight: 600; text-transform: uppercase; line-height: 0.82;
 }
-.tlg-card__name span { display: block; }
-.tlg-card__first { color: rgba(244, 236, 216, 0.92); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55); }
-.tlg-card__last  { color: rgba(244, 236, 216, 0.22); }
+.tlg-card__name span { display: block; white-space: nowrap; }
+.tlg-card__first { font-size: clamp(1.5rem, 2.5vw, 2.3rem); color: rgba(244, 236, 216, 0.95); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); }
+.tlg-card__last  { font-size: clamp(1.1rem, 1.85vw, 1.7rem); color: rgba(244, 236, 216, 0.3); }
 .tlg-card__photo {
   position: absolute; inset: 0; z-index: 3;
   display: flex; align-items: flex-end; justify-content: center;
