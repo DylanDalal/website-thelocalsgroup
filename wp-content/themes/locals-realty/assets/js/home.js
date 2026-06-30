@@ -242,9 +242,9 @@
       var rect = track.getBoundingClientRect();
       var pinned = Math.max(1, track.offsetHeight - window.innerHeight);
       var raw = Math.min(1, Math.max(0, -rect.top / pinned));
-      // Hold frame 0 until START of the way down, run the scrub to END, then sit on
-      // the last frame for the rest — so it starts farther down and lingers longer.
-      var START = 0.32, END = 0.6;
+      // Begin the scrub almost immediately (little freeze on frame 0), run it to END,
+      // then sit on the last frame for the rest — a long tail.
+      var START = 0.04, END = 0.6;
       var progress = Math.min(1, Math.max(0, (raw - START) / (END - START)));
       return Math.round(progress * (frames.length - 1));
     }

@@ -59,6 +59,7 @@ body.home .site-main { background: transparent; }
 .tlg-gold-text,
 .tlg-tagline,
 .tlg-action__brand .tlg-script,
+.tlg-paint__brand-name,
 .tlg-touch__learn,
 .tlg-touch__agent-first {
   background: linear-gradient(180deg, var(--tlg-gold-hi) 0%, var(--tlg-gold) 45%, var(--tlg-gold-lo) 100%);
@@ -689,8 +690,10 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 /* First frame is the base scene — always fully present under the rest. */
 .tlg-paint__frame:first-child { --reveal: 116; }
 
-/* Foreground layers — full-bleed rows stacked over the scene. Images are scaled by
-   width and pinned to the bottom so the layers register on all screen sizes. */
+/* Foreground layers — full-bleed rows stacked over the scene, pinned to the bottom.
+   The phone/brush are sized by viewport HEIGHT and left-anchored, so they keep a
+   constant size as the screen narrows and simply crop off the right (overflow on the
+   scene) instead of shrinking with width. */
 .tlg-paint__fg {
   position: absolute; inset: 0; z-index: 2;
   display: flex; gap: 0; align-items: flex-end;
@@ -699,8 +702,9 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-paint__fg img { display: block; width: 100%; height: auto; }
 /* Brush: stacked frames (alpha) that wipe in top→bottom, starting empty (all hidden)
    until the background flip finishes — driven by home.js. Same directional mask as
-   the background frames; each brush frame is a superset of the one before. */
-.tlg-paint__brush { position: relative; width: 100%; aspect-ratio: 1790 / 2161; }
+   the background frames; each brush frame is a superset of the one before. Sized by
+   height so it holds its size and crops right as the screen narrows. */
+.tlg-paint__brush { position: relative; height: 100vh; width: auto; aspect-ratio: 1790 / 2161; transform-origin: left bottom; }
 .tlg-paint__brush .tlg-paint__brush-frame {     /* beat .tlg-paint__fg img's height:auto */
   position: absolute; inset: 0;
   display: block; width: 100%; height: 100%;
@@ -710,27 +714,61 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
           mask-image: linear-gradient(to bottom, #000 calc(var(--reveal) * 1% - 14%), transparent calc(var(--reveal) * 1%));
   will-change: mask-image;
 }
+/* Layer 3 — Stay In Touch copy column: 13vw spacer / 20vw text / rest. */
+.tlg-paint__fg--text { align-items: stretch; }          /* full-height column, not bottom-aligned */
+.tlg-paint__cell--lead { flex: 0 0 26vw; }
+.tlg-paint__cell--tail { flex: 1 1 auto; }
+.tlg-paint__copy {
+  flex: 0 0 20vw;
+  display: flex; flex-direction: column; gap: 2vh;      /* gap between content blocks */
+  color: var(--tlg-ink);
+  text-shadow: 0 2px 16px rgba(3, 12, 13, 0.5);
+}
+.tlg-paint__copy-pad  { height: 12vh; flex: none; }     /* 1 — larger top spacer */
+.tlg-paint__copy-fill { flex: 1 1 auto; }               /* 6 — fills the rest */
+/* 2 — The Locals Group lockup */
+.tlg-paint__brand { height: 8vh; flex: none; margin: 0; display: grid; align-content: center; line-height: 1; }
+.tlg-paint__brand-the   { font-family: var(--tlg-display); font-weight: 700; font-size: 1vw; letter-spacing: 0.45em; }
+.tlg-paint__brand-name  { font-size: 4.2vw; line-height: 0.72; margin-left: 1.4vw; }
+.tlg-paint__brand-group { font-family: var(--tlg-display); font-weight: 700; font-size: 1vw; letter-spacing: 0.45em; margin-left: 6vw; }
+/* 3 — STAY IN TOUCH */
+.tlg-paint__title2 { height: 34vh; flex: none; margin: 0; font-size: 12.5vh; line-height: 0.9; color: var(--tlg-ink); }
+/* 4 — Learn the Area — real teal brush image (brush2.png), white text, no translation */
+.tlg-paint__learn {
+  height: 9vh; flex: none; margin: 0; width: fit-content;
+  display: inline-flex; align-items: center; gap: 0.4em;
+  padding: 0 2.6em 0 2em;
+  color: #fff; text-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
+  font-family: var(--tlg-display); font-weight: 800; font-style: italic;
+  text-transform: uppercase; letter-spacing: 0.03em; font-size: 1.7vw; line-height: 1.05;
+  background: url("../images/brush3.png") center / 100% 100% no-repeat;
+}
+.tlg-paint__pin { width: 1em; height: 1em; fill: currentColor; flex: none; }
+/* 5 — body copy (black, shaped + shifted right to clear the phone/brush) */
+.tlg-paint__copy-body { margin: 0; flex: none; max-width: 22vw; transform: translateX(7vw); color: #000; text-shadow: none; line-height: 1.55; font-size: 1.3vw; }
+
 /* Layer 1 — 33vw / 67vw */
-.tlg-paint__cell--phone { flex: 0 0 33vw; padding: 30px; }
-/* Phone entrance: pivots from its bottom-left corner, scaling 0.6→1 and rotating
-   -20deg→0 as the section scrolls in (driven by home.js). */
-.tlg-paint__phone {
+.tlg-paint__cell--phone { flex: 0 0 auto; padding: 30px; transform-origin: left center; }
+/* Phone: sized by height (constant size, crops right as width shrinks). Entrance
+   pivots from its bottom-left corner, scaling 0.6→1 and rotating -20deg→0 (home.js). */
+.tlg-paint__fg .tlg-paint__phone {
+  height: 90vh; width: auto;
   transform-origin: left bottom;
   transform: rotate(-20deg) scale(0.6);   /* start state; JS animates it on scroll */
   will-change: transform;
 }
-@media (prefers-reduced-motion: reduce) { .tlg-paint__phone { transform: none; } }
-.tlg-paint__cell--right { flex: 0 0 67vw; }
-/* Layer 2 — 8.33vw / 46.6vw / remainder */
+@media (prefers-reduced-motion: reduce) { .tlg-paint__fg .tlg-paint__phone { transform: none; } }
+.tlg-paint__cell--right { flex: 1 1 auto; }
+/* Layer 2 — left spacer / brush (sized by height) / remainder */
 .tlg-paint__cell--spacer { flex: 0 0 8.33vw; }
-.tlg-paint__cell--brush  { flex: 0 0 46.6vw; }
+.tlg-paint__cell--brush  { flex: 0 0 auto; transform-origin: left center; }
 .tlg-paint__cell--rest   { flex: 1 1 auto; }
 
 /* Sections 2 & 3 — over the tall background2. ~330vh tall so the sticky wave stays
    pinned the whole way through (scene 100vh + this = ~430vh total). */
 .tlg-paint--fall { position: relative; overflow: clip; min-height: 330vh; }
 .tlg-paint__fall-bg {
-  position: absolute; inset: 0; z-index: 0;
+  position: absolute; top: 0; left: 0; right: 0; height: 200vh; z-index: 0;
   background-image: var(--bg2);
   background-position: center top;      /* meets the scene's bottom edge */
   background-size: cover;
@@ -742,13 +780,16 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
    FRONT of the cards/section-3 content (z-index 4) — the frames carry alpha, so the
    wave composites over everything below it. */
 .tlg-paint__wave {
-  position: absolute; inset: 0; z-index: 4;
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
+  top: 80vh;            /* begin the wave further down the section, not at its top */
   pointer-events: none;
 }
 .tlg-paint__wave-frame {
   position: sticky; top: 0;
   display: block; width: 100%; height: 100vh;
-  object-fit: cover; object-position: center bottom;
+  /* center top keeps the crest + the image's transparent top edge in view, so the
+     wave fades into the content above instead of being hard-cut at the top. */
+  object-fit: cover; object-position: center top;
 }
 
 /* Section 2 content sits above the wave; section 3 is its own 100vh block. */
@@ -930,6 +971,15 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
   text-align: center;
 }
+/* Banner placement above the phone scene — a standalone band, no top margin. */
+.tlg-features--banner {
+  margin: 0 auto;
+  padding: clamp(0.6rem, 1.4vw, 1.1rem) var(--gutter);   /* ~60% of the original height */
+  border-top: 1px solid var(--tlg-line);
+  border-bottom: 1px solid var(--tlg-line);
+}
+.tlg-features--banner strong { font-size: 0.9rem; }
+.tlg-features--banner span { font-size: 0.68rem; }
 .tlg-features li { display: flex; flex-direction: column; gap: 0.15rem; }
 .tlg-features strong { font-family: var(--tlg-display); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 1.05rem; color: var(--tlg-gold-hi); }
 .tlg-features span { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tlg-muted); }

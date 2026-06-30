@@ -164,6 +164,13 @@ $seller = $pick(6);
     </div>
 </section>
 
+<!-- Feature banner above the phone scene -->
+<ul class="tlg-features tlg-features--banner">
+    <li><strong>Local Expertise</strong><span>You can trust</span></li>
+    <li><strong>Luxury Service</strong><span>Personal touch</span></li>
+    <li><strong>Community First</strong><span>Always local</span></li>
+</ul>
+
 <!-- ====== 2b. GET APPROVED — PAINTED SCENES (background1 flipbook → background2 + wave) ======
      A 300vh trio:
        · Section 1 — a 100vh "scene" on background1-1…4. As it scrolls into view the
@@ -209,6 +216,31 @@ $seller = $pick(6);
             <?php endif; ?>
         </div>
         <div class="tlg-paint__cell tlg-paint__cell--rest"></div>
+    </div>
+
+    <!-- Foreground layer 3 — Stay In Touch copy: 13vw spacer / 20vw text / rest. -->
+    <div class="tlg-paint__fg tlg-paint__fg--text">
+        <div class="tlg-paint__cell tlg-paint__cell--lead"></div>
+        <div class="tlg-paint__copy">
+            <div class="tlg-paint__copy-pad"></div>
+            <p class="tlg-paint__brand">
+                <span class="tlg-paint__brand-the">THE</span>
+                <span class="tlg-script tlg-paint__brand-name">Locals</span>
+                <span class="tlg-paint__brand-group">GROUP</span>
+            </p>
+            <h2 class="tlg-display tlg-paint__title2">Stay<br>In<br>Touch</h2>
+            <p class="tlg-paint__learn">
+                <svg class="tlg-paint__pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+                <span>Learn the<br>Area</span>
+            </p>
+            <!-- Leading spaces shape the left edge to the brush curve (tune to taste). -->
+            <p class="tlg-paint__copy-body">Get local updates,<br>
+                &nbsp;&nbsp;market insight, and<br>
+                &nbsp;&nbsp;&nbsp;community connection<br>
+                &nbsp;from The Locals Group.</p>
+            <div class="tlg-paint__copy-fill"></div>
+        </div>
+        <div class="tlg-paint__cell tlg-paint__cell--tail"></div>
     </div>
 </section>
 
