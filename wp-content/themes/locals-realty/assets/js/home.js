@@ -109,50 +109,25 @@
     update();
   }
 
-  // ---- Painted "Get Approved" scene (background1 flipbook → brush cycle) ----
-  // Section 1 (.tlg-paint--scene) stacks four frames (background1-1…4) which
-  // crossfade 1→4 as the section scrolls in (a quick flip). Right where that flip
-  // finishes, a brush <img> (frames from /brushes) is cycled by continued scroll.
+  // ---- Painted "Get Approved" scene (background1 flipbook → brush wipe) ----
+  // Section 1 (.tlg-paint--scene) stacks four frames (background1-1…4) that wipe in
+  // 1→4 as the section scrolls in (a quick flip). Right where that flip finishes, the
+  // stacked brush frames (from /brushes) wipe in by continued scroll. Both use the
+  // same top→bottom directional reveal (--reveal), set on each frame below.
   function bootPaintScene() {
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var scene = document.querySelector('[data-paint-scene]');
     if (!scene) return;
 
     var frames = Array.prototype.slice.call(scene.querySelectorAll('.tlg-paint__frame'));
-    var brush = scene.querySelector('[data-brush-frames]');
+    var brushWrap = scene.querySelector('[data-brush-frames]');
+    var bFrames = brushWrap
+      ? Array.prototype.slice.call(brushWrap.querySelectorAll('.tlg-paint__brush-frame'))
+      : [];
+    var phone = scene.querySelector('[data-phone]');
 
-    var bFrames = [];
-    if (brush) {
-      try { bFrames = JSON.parse(brush.getAttribute('data-frames') || '[]'); }
-      catch (e) { bFrames = []; }
-      bFrames = bFrames.map(function (s) { return encodeURI(s); });
-    }
-
-    if (reduce) {
-      if (bFrames.length) brush.src = bFrames[bFrames.length - 1]; // final brush
-      return;                                                      // CSS shows final bg frame
-    }
-    if (!frames.length && !bFrames.length) return;
-
-    // Preload brush frames and track readiness so a fast scroll never blanks it.
-    var bReady = {}, bShown = 0;
-    bFrames.forEach(function (src) {
-      if (bReady[src]) return;
-      var im = new Image();
-      im.decoding = 'async';
-      im.onload = function () { bReady[src] = true; onScroll(); };
-      im.src = src;
-      if (im.complete && im.naturalWidth > 0) bReady[src] = true;
-    });
-    if (brush && brush.complete && brush.naturalWidth > 0 && bFrames[0]) bReady[bFrames[0]] = true;
-    function nearestBrush(i) {
-      if (bReady[bFrames[i]]) return i;
-      for (var d = 1; d < bFrames.length; d++) {
-        if (i - d >= 0 && bReady[bFrames[i - d]]) return i - d;
-        if (i + d < bFrames.length && bReady[bFrames[i + d]]) return i + d;
-      }
-      return bShown;
-    }
+    if (reduce) return;   // CSS reveals the final background/brush frames + upright phone
+    if (!frames.length && !bFrames.length && !phone) return;
 
     var ticking = false;
     function update() {
@@ -160,7 +135,19 @@
       var vh = window.innerHeight;
       var top = scene.getBoundingClientRect().top;
 
-      // Background flip — triggers as the section appears and finishes fast.
+      // Phone entrance — pivots from bottom-left, scaling 0.6→1 and rotating -20°→0 as
+      // the section scrolls in.
+      if (phone) {
+        var pp = Math.min(1, Math.max(0, (vh * 0.95 - top) / (vh * 0.5)));
+        var pe = pp * pp * (3 - 2 * pp);                 // smoothstep
+        var ps = 0.6 + 0.4 * pe;
+        var pr = -20 * (1 - pe);
+        phone.style.transform = 'rotate(' + pr.toFixed(2) + 'deg) scale(' + ps.toFixed(3) + ')';
+      }
+
+      // Background flip — triggers as the section appears and finishes fast. Each new
+      // frame is wiped in top→bottom via --reveal, eased with smoothstep so the paint
+      // flows on rather than pops.
       var flipStart = vh * 0.92, flipDist = vh * 0.18;
       if (frames.length) {
         var progress = Math.min(1, Math.max(0, (flipStart - top) / flipDist));
@@ -168,20 +155,30 @@
         var f = progress * (total - 1);
         var active = Math.min(total - 1, Math.floor(f));
         var t = f - active;
-        var fade = Math.min(1, Math.max(0, (t - 0.375) / 0.25));
+        var e = t * t * (3 - 2 * t);          // smoothstep ease
         for (var i = 0; i < total; i++) {
-          var opacity = 0;
-          if (i === active) opacity = 1;
-          else if (i === active + 1) opacity = fade;
-          frames[i].style.opacity = opacity.toFixed(3);
+          var reveal = 0;
+          if (i <= active) reveal = 116;        // already painted in
+          else if (i === active + 1) reveal = e * 116;   // wiping in now
+          frames[i].style.setProperty('--reveal', reveal.toFixed(1));
         }
       }
 
-      // Brush cycle — begins where the flip ends, runs quickly over the next ~0.28vh.
-      if (brush && bFrames.length) {
+      // Brush wipe — five states (empty → 1 → 2 → 3 → 4). Begins where the flip ends
+      // and starts empty; each frame wipes in top→bottom over the one before it.
+      if (bFrames.length) {
         var bp = Math.min(1, Math.max(0, ((flipStart - flipDist) - top) / (vh * 0.28)));
-        var bi = nearestBrush(Math.round(bp * (bFrames.length - 1)));
-        if (bi !== bShown) { bShown = bi; brush.src = bFrames[bi]; }
+        var bTotal = bFrames.length;
+        var bf = bp * bTotal;                 // 0..total; floor() = the frame wiping in
+        var bFloor = Math.floor(bf);
+        var bt = bf - bFloor;
+        var be = bt * bt * (3 - 2 * bt);      // smoothstep
+        for (var k = 0; k < bTotal; k++) {
+          var br = 0;
+          if (k < bFloor) br = 116;                  // already painted
+          else if (k === bFloor) br = be * 116;      // wiping in now
+          bFrames[k].style.setProperty('--reveal', br.toFixed(1));
+        }
       }
     }
     function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
@@ -192,11 +189,12 @@
 
   // ---- Wave scrub (background2 foreground) ----
   // A WebP frame sequence (alpha) pinned via CSS position:sticky inside
-  // [data-wave-track]. The flat frame list (held duplicates already expanded in PHP)
-  // is mapped to scroll: as the 150vh track passes the viewport we swap the <img>
-  // src across the sequence. Frames are preloaded, and we only ever show a frame
-  // that has finished decoding — until the exact one is ready we hold the nearest
-  // decoded frame, so a fast scroll never lands on a blank.
+  // [data-wave-track] (which spans the whole 330vh section). The flat frame list
+  // (held duplicates already expanded in PHP) is mapped to scroll over a sub-window
+  // of the section, so the wave starts farther down and holds its last frame for a
+  // long tail. Frames are preloaded, and we only ever show a frame that has finished
+  // decoding — until the exact one is ready we hold the nearest decoded frame, so a
+  // fast scroll never lands on a blank.
   function bootWaveScrub() {
     var track = document.querySelector('[data-wave-track]');
     var img = document.querySelector('[data-wave-frames]');
@@ -240,10 +238,14 @@
 
     function targetIndex() {
       if (reduce) return frames.length - 1;   // rest on the final frame
-      // Pinned span: the track (150vh) minus the sticky child (100vh) = 50vh of scroll.
+      // raw = 0..1 across the section's pinned span (its height minus one viewport).
       var rect = track.getBoundingClientRect();
       var pinned = Math.max(1, track.offsetHeight - window.innerHeight);
-      var progress = Math.min(1, Math.max(0, -rect.top / pinned));
+      var raw = Math.min(1, Math.max(0, -rect.top / pinned));
+      // Hold frame 0 until START of the way down, run the scrub to END, then sit on
+      // the last frame for the rest — so it starts farther down and lingers longer.
+      var START = 0.32, END = 0.6;
+      var progress = Math.min(1, Math.max(0, (raw - START) / (END - START)));
       return Math.round(progress * (frames.length - 1));
     }
 

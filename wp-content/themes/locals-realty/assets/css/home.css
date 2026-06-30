@@ -629,6 +629,25 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   .tlg-cta--sell  { transform: rotate(3deg); }
 }
 
+/* Large / high-res screens: the composition's clamp() caps would leave the art
+   small in a sea of empty teal (agents flung to the far corners). Past 1440px we
+   size everything with the viewport (vw/vh) and anchor the agents/labels to a
+   centred band via calc(50% - …vw), so it scales up and stays cohesive. */
+@media (min-width: 1440px) {
+  .tlg-action__agent { width: 26vw; }
+  .tlg-action__agent--left  { left:  calc(50% - 38vw); }
+  .tlg-action__agent--right { right: calc(50% - 38vw); }
+  .tlg-action__brand .tlg-script { font-size: 4vw; }
+  .tlg-cta--approve { width: 30vw; }
+  .tlg-cta--find,
+  .tlg-cta--sell  { width: 22vw; bottom: 9vh; }
+  .tlg-cta--find  { left:  calc(50% - 33vw); }
+  .tlg-cta--sell  { right: calc(50% - 33vw); }
+
+  /* Realtor cards grow with the viewport too, instead of capping at 260px. */
+  .tlg-card { width: 18vw; }
+}
+
 /* ============================ 2b. GET APPROVED — PAINTED SCENES ============================
    A 300vh trio:
      · Section 1 — a 100vh "scene": four stacked frames (background1-1…4) flip 1→4 as
@@ -655,14 +674,20 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 .tlg-paint__frames { position: absolute; inset: 0; z-index: 0; }
 .tlg-paint__frame {
   position: absolute; inset: 0;
-  opacity: 0;
   background-position: center bottom;   /* anchored to the seam edge */
   background-size: cover;
   background-repeat: no-repeat;
-  will-change: opacity;
+  /* Directional wipe: the paint in each frame is a superset of the one before, so
+     rather than cross-fading we keep lower frames visible and wipe the next one in
+     top→bottom — the direction the brush is dragged. --reveal (0→116, set per-frame
+     in home.js) is the wipe edge position in %; the 14% trails it as a soft edge. */
+  --reveal: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(var(--reveal) * 1% - 14%), transparent calc(var(--reveal) * 1%));
+          mask-image: linear-gradient(to bottom, #000 calc(var(--reveal) * 1% - 14%), transparent calc(var(--reveal) * 1%));
+  will-change: mask-image;
 }
-/* First frame shows the base scene before JS takes over / if it never does. */
-.tlg-paint__frame:first-child { opacity: 1; }
+/* First frame is the base scene — always fully present under the rest. */
+.tlg-paint__frame:first-child { --reveal: 116; }
 
 /* Foreground layers — full-bleed rows stacked over the scene. Images are scaled by
    width and pinned to the bottom so the layers register on all screen sizes. */
@@ -672,16 +697,38 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   pointer-events: none;
 }
 .tlg-paint__fg img { display: block; width: 100%; height: auto; }
+/* Brush: stacked frames (alpha) that wipe in top→bottom, starting empty (all hidden)
+   until the background flip finishes — driven by home.js. Same directional mask as
+   the background frames; each brush frame is a superset of the one before. */
+.tlg-paint__brush { position: relative; width: 100%; aspect-ratio: 1790 / 2161; }
+.tlg-paint__brush .tlg-paint__brush-frame {     /* beat .tlg-paint__fg img's height:auto */
+  position: absolute; inset: 0;
+  display: block; width: 100%; height: 100%;
+  object-fit: contain; object-position: bottom;
+  --reveal: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(var(--reveal) * 1% - 14%), transparent calc(var(--reveal) * 1%));
+          mask-image: linear-gradient(to bottom, #000 calc(var(--reveal) * 1% - 14%), transparent calc(var(--reveal) * 1%));
+  will-change: mask-image;
+}
 /* Layer 1 — 33vw / 67vw */
 .tlg-paint__cell--phone { flex: 0 0 33vw; padding: 30px; }
+/* Phone entrance: pivots from its bottom-left corner, scaling 0.6→1 and rotating
+   -20deg→0 as the section scrolls in (driven by home.js). */
+.tlg-paint__phone {
+  transform-origin: left bottom;
+  transform: rotate(-20deg) scale(0.6);   /* start state; JS animates it on scroll */
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) { .tlg-paint__phone { transform: none; } }
 .tlg-paint__cell--right { flex: 0 0 67vw; }
 /* Layer 2 — 8.33vw / 46.6vw / remainder */
 .tlg-paint__cell--spacer { flex: 0 0 8.33vw; }
 .tlg-paint__cell--brush  { flex: 0 0 46.6vw; }
 .tlg-paint__cell--rest   { flex: 1 1 auto; }
 
-/* Sections 2 & 3 — over the tall background2 ---------------------------------*/
-.tlg-paint--fall { position: relative; overflow: clip; }
+/* Sections 2 & 3 — over the tall background2. ~330vh tall so the sticky wave stays
+   pinned the whole way through (scene 100vh + this = ~430vh total). */
+.tlg-paint--fall { position: relative; overflow: clip; min-height: 330vh; }
 .tlg-paint__fall-bg {
   position: absolute; inset: 0; z-index: 0;
   background-image: var(--bg2);
@@ -690,13 +737,12 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   background-repeat: no-repeat;
 }
 
-/* Wave scrub: a 150vh track (the back half of the trio) whose sticky frame pins to
-   the viewport while the track scrolls past, so scroll scrubs the WebP sequence.
-   Begins 50vh into this section = 150vh into the trio. The frames carry alpha, so
-   the wave composites over background2 (no fill behind it). */
+/* Wave scrub: spans the whole 330vh section; its sticky frame stays pinned to the
+   viewport for the entire length while scroll scrubs the WebP sequence. Sits in
+   FRONT of the cards/section-3 content (z-index 4) — the frames carry alpha, so the
+   wave composites over everything below it. */
 .tlg-paint__wave {
-  position: absolute; left: 0; right: 0; z-index: 1;
-  top: 50vh; height: 150vh;
+  position: absolute; inset: 0; z-index: 4;
   pointer-events: none;
 }
 .tlg-paint__wave-frame {
@@ -715,14 +761,14 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   text-shadow: 0 2px 22px rgba(3, 12, 13, 0.55);
 }
 .tlg-paint__block--a {
-  min-height: 100vh;                              /* trio 100–200vh */
+  min-height: 130vh;                              /* cards zone */
   max-width: none;                                /* let the card rail run wide */
   padding-left: 0; padding-right: 0;
   padding-top: clamp(8rem, 28vh, 18rem);          /* clear the paint streaks from the seam */
 }
 .tlg-paint__final {
   position: relative; z-index: 2;
-  min-height: 100vh;                              /* trio 200–300vh */
+  min-height: 200vh;                              /* section 3 zone (130 + 200 = 330vh) */
   display: grid; align-content: center;
 }
 .tlg-paint__body { margin-top: 1rem; color: var(--tlg-muted); font-size: 1.05rem; line-height: 1.7; }
@@ -741,12 +787,11 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
   overflow-x: auto; overflow-y: hidden;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
-  padding: 0.5rem var(--gutter) 1.25rem;
-  scrollbar-color: rgba(200, 162, 74, 0.55) transparent;
-  scrollbar-width: thin;
+  padding: 0.5rem var(--gutter) 1.25rem 2vw;   /* 2vw lead-in before the first card */
+  scrollbar-width: none;                       /* Firefox — hide scrollbar */
+  -ms-overflow-style: none;                    /* legacy Edge */
 }
-.tlg-cards::-webkit-scrollbar { height: 8px; }
-.tlg-cards::-webkit-scrollbar-thumb { background: rgba(200, 162, 74, 0.5); border-radius: 99px; }
+.tlg-cards::-webkit-scrollbar { display: none; } /* WebKit — hide scrollbar */
 .tlg-cards:focus-visible { outline: 2px solid var(--tlg-gold-hi); outline-offset: 4px; border-radius: 12px; }
 .tlg-cards__track {
   list-style: none; margin: 0; padding: 0;
@@ -791,8 +836,8 @@ body.home .site-drawer a { color: var(--tlg-ink); border-bottom-color: var(--tlg
 
 @media (max-width: 560px) { .tlg-paint--scene { min-height: 82vh; } }
 @media (prefers-reduced-motion: reduce) {
-  .tlg-paint__frame:first-child { opacity: 0; }
-  .tlg-paint__frame:last-child  { opacity: 1; }   /* show the finished painting */
+  .tlg-paint__frame:last-child { --reveal: 116; }  /* show the finished painting */
+  .tlg-paint__brush-frame:last-child { --reveal: 116; }
 }
 
 /* ============================ 3. STAY IN TOUCH ============================ */

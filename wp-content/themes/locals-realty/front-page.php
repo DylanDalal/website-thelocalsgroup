@@ -182,7 +182,7 @@ $seller = $pick(6);
     <!-- Foreground layer 1 — two columns, 33vw / 67vw, no gap. -->
     <div class="tlg-paint__fg tlg-paint__fg--1" aria-hidden="true">
         <div class="tlg-paint__cell tlg-paint__cell--phone">
-            <img src="<?php echo esc_url("$img_dir/phone.webp"); ?>" alt="" decoding="async">
+            <img class="tlg-paint__phone" data-phone src="<?php echo esc_url("$img_dir/phone.webp"); ?>" alt="" decoding="async">
         </div>
         <div class="tlg-paint__cell tlg-paint__cell--right"><!-- image TBD --></div>
     </div>
@@ -192,18 +192,21 @@ $seller = $pick(6);
         <div class="tlg-paint__cell tlg-paint__cell--spacer"></div>
         <div class="tlg-paint__cell tlg-paint__cell--brush">
             <?php
-            // Brush animation frames (WebP, alpha) cycled by scroll once the
-            // background1 flip completes — see bootPaintScene in home.js.
+            // Brush animation frames (WebP, alpha), stacked and wiped in by scroll once
+            // the background1 flip completes — see bootPaintScene in home.js.
             $brush_frames = [];
             foreach (glob(LOCALS_REALTY_DIR . '/assets/images/brushes/*.webp') as $bf) {
                 $brush_frames[] = "$img_dir/brushes/" . basename($bf);
             }
             sort($brush_frames);
-            $brush_first = $brush_frames ? $brush_frames[0] : "$img_dir/brushes/brush1.webp";
             ?>
-            <img class="tlg-paint__brush" data-brush-frames
-                 data-frames="<?php echo esc_attr(wp_json_encode($brush_frames)); ?>"
-                 src="<?php echo esc_url($brush_first); ?>" alt="" loading="lazy" decoding="async">
+            <?php if ($brush_frames) : ?>
+            <div class="tlg-paint__brush" data-brush-frames>
+                <?php foreach ($brush_frames as $bsrc) : ?>
+                    <img class="tlg-paint__brush-frame" src="<?php echo esc_url($bsrc); ?>" alt="" loading="lazy" decoding="async">
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
         </div>
         <div class="tlg-paint__cell tlg-paint__cell--rest"></div>
     </div>
@@ -229,6 +232,10 @@ if ($wave_seq) {
     }
 }
 ?>
+<?php /* Warm the wave frames early (parser-discovered, before the footer JS preloads). */ ?>
+<?php foreach (array_unique($wave_frames) as $wf) : ?>
+<link rel="preload" as="image" href="<?php echo esc_url($wf); ?>" type="image/webp" fetchpriority="low">
+<?php endforeach; ?>
 <section class="tlg tlg-paint tlg-paint--fall" data-paint-fall
          style="--bg2:url('<?php echo esc_url("$img_dir/background2.jpg"); ?>');">
     <div class="tlg-paint__fall-bg" aria-hidden="true"></div>
